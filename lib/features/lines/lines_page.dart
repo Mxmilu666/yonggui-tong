@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/theme/line_colors.dart';
+import '../../core/widgets/line_badge.dart';
 import '../../data/providers.dart';
 
 class LinesPage extends ConsumerWidget {
@@ -45,28 +46,58 @@ class LinesPage extends ConsumerWidget {
           final stations = data.stationsForLine(lineId!);
           return Center(child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 720),
-            child: ListView.separated(
-              padding: const EdgeInsets.all(16),
-              itemCount: stations.length,
-              separatorBuilder: (_, _) => const SizedBox(height: 8),
-              itemBuilder: (context, index) {
-                final station = stations[index];
-                return Card(child: ListTile(
-                  minTileHeight: 72,
-                  leading: CircleAvatar(
-                    backgroundColor: LineColors.colorOf(lineId!),
-                    foregroundColor: LineColors.onColorOf(lineId!),
-                    child: Text('${index + 1}'),
-                  ),
-                  title: Text(station.name),
-                  subtitle: Text(station.lineIds.length > 1
-                    ? '换乘 ${station.lineIds.where((id) => id != lineId).map((id) => '$id号线').join(' · ')}'
-                    : station.pinyin),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => context.push('/stations/${station.id}'),
-                ));
-              },
-            ),
+            child: CustomScrollView(slivers: [
+              SliverToBoxAdapter(child: Container(
+                margin: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: LineColors.colorOf(lineId!).withValues(alpha: .1),
+                  border: Border(top: BorderSide(width: 5, color: LineColors.colorOf(lineId!))),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Hero(tag: 'line-$lineId', child: LineBadge(lineId: lineId!)),
+                  const SizedBox(height: 16),
+                  Text(stations.isEmpty ? '暂无站点目录' : '${stations.first.name} ↔ ${stations.last.name}',
+                    style: Theme.of(context).textTheme.headlineSmall),
+                  const SizedBox(height: 8),
+                  Text('${stations.length} 个站点 · 按官方站序排列'),
+                  const SizedBox(height: 8),
+                  const Text('点击车站查看到站与换乘信息'),
+                ]),
+              )),
+              SliverPadding(padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                sliver: SliverList.builder(
+                  itemCount: stations.length,
+                  itemBuilder: (context, index) {
+                    final station = stations[index];
+                    return IntrinsicHeight(child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                      SizedBox(width: 32, child: Stack(alignment: Alignment.center, children: [
+                        Positioned(top: index == 0 ? 36 : 0, bottom: index == stations.length - 1 ? 36 : 0,
+                          child: Container(width: 3, color: LineColors.colorOf(lineId!))),
+                        Center(child: Container(width: 16, height: 16,
+                          decoration: BoxDecoration(shape: BoxShape.circle,
+                            color: Theme.of(context).colorScheme.surface,
+                            border: Border.all(color: LineColors.colorOf(lineId!), width: station.lineIds.length > 1 ? 4 : 2)))),
+                      ])),
+                      Expanded(child: ListTile(
+                        minTileHeight: 80,
+                        title: Text(station.name),
+                        subtitle: station.lineIds.length > 1
+                          ? Padding(padding: const EdgeInsets.only(top: 8),
+                              child: Wrap(spacing: 6, runSpacing: 6, children: [
+                                for (final other in station.lineIds.where((id) => id != lineId))
+                                  LineBadge(lineId: other, small: true),
+                              ]))
+                          : Text(station.pinyin),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => context.push('/stations/${station.id}'),
+                      )),
+                    ]));
+                  },
+                ),
+              ),
+            ]),
           ));
         },
       ),

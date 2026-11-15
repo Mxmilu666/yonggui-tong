@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../features/arrivals/arrivals_page.dart';
 import '../features/home/home_page.dart';
 import '../features/lines/lines_page.dart';
+import '../features/map/map_page.dart';
 import '../features/settings/settings_page.dart';
 import '../features/stations/station_page.dart';
 
@@ -20,10 +21,11 @@ final appRouter = GoRouter(
         GoRoute(path: '/arrivals/:id', builder: (_, state) => ArrivalsPage(
           stationId: int.tryParse(state.pathParameters['id'] ?? ''),
         )),
-        GoRoute(path: '/map', builder: (_, _) => const LinesPage()),
+        GoRoute(path: '/map', builder: (_, _) => const MapPage()),
         GoRoute(path: '/settings', builder: (_, _) => const SettingsPage()),
       ],
     ),
+    GoRoute(path: '/lines', builder: (_, _) => const LinesPage()),
     GoRoute(path: '/lines/:id', builder: (_, state) => LinesPage(
       lineId: int.tryParse(state.pathParameters['id'] ?? ''),
     )),
