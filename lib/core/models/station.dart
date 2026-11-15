@@ -19,9 +19,12 @@ class Station {
   final int id;
   final String name;
   final List<StationEntry> entries;
-  List<int> get lineIds => (entries.map((e) => lineIdOf(e.line)).toSet().toList()..sort());
+  late final List<int> _lineIds = List.unmodifiable(
+    entries.map((entry) => lineIdOf(entry.line)).toSet().toList()..sort());
+  late final List<String> _codes = List.unmodifiable(entries.map((entry) => entry.code));
+  List<int> get lineIds => _lineIds;
   String get pinyin => entries.first.pinyin;
-  List<String> get codes => List.unmodifiable(entries.map((e) => e.code));
+  List<String> get codes => _codes;
   bool matches(String query) {
     final q = query.trim().toLowerCase();
     return name.contains(q) || entries.any((e) => e.pinyin.toLowerCase().contains(q)
@@ -36,10 +39,8 @@ class StationCatalog {
   final List<Station> stations;
   final Map<String, int> dictionary;
   final DateTime updatedAt;
-  Station? stationById(int id) {
-    for (final station in stations) { if (station.id == id) return station; }
-    return null;
-  }
+  late final Map<int, Station> _byId = {for (final station in stations) station.id: station};
+  Station? stationById(int id) => _byId[id];
   List<Station> search(String query) {
     final q = query.trim().toLowerCase();
     final line = RegExp(r'^(?:地铁\s*)?([1-9]\d?)\s*号线(?:路)?$').firstMatch(q)

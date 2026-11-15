@@ -7,12 +7,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:yonggui_tong/core/models/arrival.dart';
+import 'package:yonggui_tong/core/models/line.dart';
 import 'package:yonggui_tong/core/models/station.dart';
 import 'package:yonggui_tong/core/utils/station_resolver.dart';
 import 'package:yonggui_tong/data/providers.dart';
 import 'package:yonggui_tong/features/arrivals/arrivals_page.dart';
 import 'package:yonggui_tong/features/home/home_page.dart';
 import 'package:yonggui_tong/features/settings/settings_page.dart';
+import 'package:yonggui_tong/features/planner/planner_page.dart';
 
 class _FixtureCatalog extends CatalogController {
   _FixtureCatalog(this.catalog);
@@ -58,6 +60,8 @@ void main() {
     catalogProvider.overrideWith(() => _FixtureCatalog(catalog)),
     arrivalsProvider.overrideWith(() => _FixtureArrivals(snapshot)),
     nowProvider.overrideWith((ref) => Stream.value(now)),
+    networkProvider.overrideWith((ref) async => MetroNetwork.fromJson(
+      jsonDecode(File('assets/data/network.json').readAsStringSync()) as Map<String, dynamic>)),
   ], child: child);
 
   testWidgets('320dp home search routes the real 鼓楼 ID and retains four empty directions', (tester) async {
@@ -106,6 +110,28 @@ void main() {
     ])))));
     await tester.pumpAndSettle();
     expect(find.text('暂无有效班次'), findsNWidgets(4));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('320dp 深色行程估算可换站、交换并展示换乘明细', (tester) async {
+    tester.view.physicalSize = const Size(320, 820);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final from = catalog.search('东门口（天一广场）').single;
+    final to = catalog.search('城隍庙').single;
+    await tester.pumpWidget(scope(MaterialApp(theme: ThemeData(
+      useMaterial3: true, brightness: Brightness.dark),
+      home: PlannerPage(originId: from.id, destinationId: to.id))));
+    await tester.pumpAndSettle();
+    expect(find.text('8 分钟'), findsOneWidget);
+    expect(find.text('2 站 · 1 次换乘'), findsOneWidget);
+    await tester.tap(find.byTooltip('交换起点与终点'));
+    await tester.pumpAndSettle();
+    expect(find.text('8 分钟'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('在 鼓楼 换乘 · 估算 4 分钟'), 250,
+      scrollable: find.byType(Scrollable).first);
+    expect(find.text('在 鼓楼 换乘 · 估算 4 分钟'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

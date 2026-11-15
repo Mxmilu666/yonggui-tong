@@ -69,8 +69,9 @@ class NetworkPainter extends CustomPainter {
             .withValues(alpha: active ? 1 : .25)
         ..style = PaintingStyle.stroke..strokeWidth = 1.5 / scale);
       if (transfer) {
-        canvas.drawCircle(point.position, 2 / scale,
-          Paint()..color = scheme.onSurface.withValues(alpha: active ? 1 : .25));
+        canvas.drawCircle(point.position, 2.5 / scale, Paint()
+          ..color = scheme.onSurface.withValues(alpha: active ? 1 : .25)
+          ..style = PaintingStyle.stroke..strokeWidth = 1 / scale);
       }
       final showName = active && (scale >= .65 ||
         (transfer && scale >= .3) ||
@@ -78,6 +79,7 @@ class NetworkPainter extends CustomPainter {
       if (!showName) continue;
       final text = TextPainter(
         text: TextSpan(text: station.name, style: TextStyle(
+          fontFamily: 'YongguiSans',
           color: scheme.onSurface,
           fontSize: 11 / scale,
           fontWeight: transfer ? FontWeight.w600 : FontWeight.w400,

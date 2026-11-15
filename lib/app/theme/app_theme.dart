@@ -15,6 +15,7 @@ abstract final class AppTheme {
       brightness: brightness,
       visualDensity: VisualDensity.standard,
       scaffoldBackgroundColor: scheme.surface,
+      fontFamily: 'YongguiSans',
       fontFamilyFallback: const ['PingFang SC', 'Noto Sans CJK SC', 'sans-serif'],
     );
     return base.copyWith(

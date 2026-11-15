@@ -181,6 +181,11 @@ class AboutPage extends StatelessWidget {
         const _AboutSection(title: '线网与行程估算', body: '线网图为示意图，不按地理比例绘制。行程时长为相邻站 2 分钟、换乘 4 分钟的本地估算，不含候车、步行及延误，不是实际列车运行时长。本应用不提供未经接口证实的票价、出入口、设施或首末班信息。'),
         const _AboutSection(title: '使用提示', body: '未公开接口可能变化或暂时不可用。到站与估算信息仅供参考，请以车站公告、现场显示及运营方发布为准。收藏与偏好设置仅保存在本机；清除目录缓存不会移除收藏。'),
         const _AboutSection(title: '接口文档', body: '仓库文档路径：\ndocs/ningbo-metro-arrival-api.md\n\n来源说明：com.nbmetro.smartmetro v5.3.14；接口文档实测日期 2026-11-16。'),
+        const SizedBox(height: 16),
+        OutlinedButton.icon(
+          onPressed: () => showLicensePage(context: context,
+            applicationName: '甬轨通', applicationVersion: '1.0.0'),
+          icon: const Icon(Icons.description_outlined), label: const Text('开源许可')),
       ]),
     )),
   );

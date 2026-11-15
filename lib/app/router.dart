@@ -5,6 +5,7 @@ import '../features/arrivals/arrivals_page.dart';
 import '../features/home/home_page.dart';
 import '../features/lines/lines_page.dart';
 import '../features/map/map_page.dart';
+import '../features/planner/planner_page.dart';
 import '../features/settings/settings_page.dart';
 import '../features/stations/station_page.dart';
 
@@ -31,6 +32,10 @@ final appRouter = GoRouter(
     )),
     GoRoute(path: '/stations/:id', builder: (_, state) => StationPage(
       stationId: int.tryParse(state.pathParameters['id'] ?? '') ?? -1,
+    )),
+    GoRoute(path: '/planner', builder: (_, state) => PlannerPage(
+      originId: int.tryParse(state.uri.queryParameters['from'] ?? ''),
+      destinationId: int.tryParse(state.uri.queryParameters['to'] ?? ''),
     )),
     GoRoute(path: '/about', builder: (_, _) => const AboutPage()),
   ],

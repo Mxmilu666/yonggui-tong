@@ -25,6 +25,9 @@ class FixtureAdapter implements HttpClientAdapter {
   final paths = <String>[];
   int failures = 0;
   int active = 0, maximumActive = 0;
+  int? statusCode;
+  DioExceptionType? failureType;
+  Object? scheduleData;
   Completer<void>? gate;
   Completer<void>? started;
   @override
@@ -36,13 +39,20 @@ class FixtureAdapter implements HttpClientAdapter {
     if (active > maximumActive) maximumActive = active;
     try {
       if (gate != null) await gate!.future;
+      if (failureType != null) throw DioException(requestOptions: options, type: failureType!);
+      if (statusCode != null) {
+        return ResponseBody.fromString('{}', statusCode!,
+          headers: {Headers.contentTypeHeader: ['application/json']});
+      }
       if (failures > 0) {
         failures--;
         throw DioException(requestOptions: options, type: DioExceptionType.connectionError);
       }
       final name = options.path.endsWith('StationList') ? 'stations'
         : options.path.endsWith('Dict') ? 'dict' : 'gulou';
-      return ResponseBody.fromString(jsonEncode(fixture(name)), 200,
+      final body = options.path.contains('ScheduleTime') && scheduleData != null
+        ? {'Code': 200, 'Data': scheduleData, 'Message': ''} : fixture(name);
+      return ResponseBody.fromString(jsonEncode(body), 200,
         headers: {Headers.contentTypeHeader: ['application/json']});
     } finally { active--; }
   }
@@ -148,6 +158,29 @@ void main() {
     adapter.failures = 3;
     await expectLater(repository.loadCatalog(force: true), throwsA(isA<ApiException>()));
     expect((await repository.cachedCatalog())!.stationById(16), isNotNull);
+  });
+
+  for (final status in [404, 500]) {
+    test('HTTP $status 保留旧到站并报告明确错误', () async {
+      final old = await repository.arrivals(16);
+      now = now.add(const Duration(seconds: 60));
+      adapter.statusCode = status;
+      await expectLater(repository.arrivals(16), throwsA(isA<ApiException>()
+        .having((error) => error.message, 'HTTP状态', contains('$status'))));
+      expect(repository.cachedArrival(16), same(old));
+    });
+  }
+
+  test('超时结束重试后反馈，Data空数组是成功空状态而非网络错误', () async {
+    await repository.loadCatalog();
+    adapter.failureType = DioExceptionType.receiveTimeout;
+    await expectLater(repository.arrivals(16), throwsA(isA<ApiException>()
+      .having((error) => error.message, '超时提示', contains('超时'))));
+    adapter.failureType = null;
+    adapter.scheduleData = [];
+    now = now.add(const Duration(seconds: 60));
+    expect((await repository.arrivals(16)).directions, isEmpty);
+    expect(delays, [const Duration(seconds: 1), const Duration(seconds: 2)]);
   });
 
   test('arrivals deduplicate in flight and rate limit manual refresh across reentry', () async {

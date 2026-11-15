@@ -44,8 +44,8 @@ class FavoritesController extends Notifier<Set<int>> {
   Future<void> toggle(int id) async {
     final next = {...state};
     if (!next.remove(id)) next.add(id);
-    state = Set.unmodifiable(next);
     await FavoritesRepository(ref.read(preferencesProvider)).save(next);
+    state = Set.unmodifiable(next);
   }
 }
 

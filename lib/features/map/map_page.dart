@@ -35,19 +35,19 @@ class _MapPageState extends ConsumerState<MapPage> {
     final dx = (size.width - NetworkPainter.canvasSize.width * scale) / 2;
     final dy = (size.height - NetworkPainter.canvasSize.height * scale) / 2;
     _transform.value = Matrix4.identity()..translateByDouble(dx, dy, 0, 1)
-      ..scaleByDouble(scale, scale, 1, 1);
+      ..scaleByDouble(scale, scale, scale, 1);
   }
 
   void _zoom(double factor) {
     final size = _viewport;
     if (size == null) return;
-    final current = _transform.value.getMaxScaleOnAxis();
+    final current = _transform.value.entry(0, 0).abs();
     final next = (current * factor).clamp(.08, 3.0);
     final center = Offset(size.width / 2, size.height / 2);
     final world = _transform.toScene(center);
     _transform.value = Matrix4.identity()
       ..translateByDouble(center.dx - world.dx * next, center.dy - world.dy * next, 0, 1)
-      ..scaleByDouble(next, next, 1, 1);
+      ..scaleByDouble(next, next, next, 1);
   }
 
   Future<void> _showStation(int id) async {
@@ -92,8 +92,12 @@ class _MapPageState extends ConsumerState<MapPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('探索线网'),
-        actions: [IconButton(onPressed: () => context.push('/lines'),
-          tooltip: '线路列表', icon: const Icon(Icons.format_list_bulleted))],
+        actions: [
+          IconButton(onPressed: () => context.push('/planner'),
+            tooltip: '行程估算', icon: const Icon(Icons.alt_route)),
+          IconButton(onPressed: () => context.push('/lines'),
+            tooltip: '线路列表', icon: const Icon(Icons.format_list_bulleted)),
+        ],
       ),
       body: catalog.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -185,7 +189,7 @@ class _MapPageState extends ConsumerState<MapPage> {
           maxScale: 3,
           boundaryMargin: const EdgeInsets.all(1000),
           child: AnimatedBuilder(animation: _transform, builder: (context, _) {
-            final scale = _transform.value.getMaxScaleOnAxis();
+            final scale = _transform.value.entry(0, 0).abs();
             return GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTapUp: (details) {

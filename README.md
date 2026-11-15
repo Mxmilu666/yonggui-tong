@@ -13,6 +13,14 @@ flutter analyze
 flutter test
 ```
 
+真实 API 的 Android 集成场景（需要网络，包含一次 60 秒实际轮询）：
+
+```sh
+flutter test integration_test/core_flow_test.dart -d emulator-5554
+```
+
+普通 `flutter test` 完全离线，使用从三个接口保存的真实裁剪响应，不会请求服务。生产运行不使用 fixture。
+
 Android 需安装 Android SDK 与 JDK 17+；iOS 需 Xcode 与相应模拟器运行时。无需 API Key。
 
 ## 架构
@@ -23,12 +31,30 @@ Android 需安装 Android SDK 与 JDK 17+；iOS 需 Xcode 与相应模拟器运�
 - API 缓存先读后更新；目录有效期 24 小时；到站仅驻留内存。
 - 到站请求按站点去重并限制至少间隔 60 秒；应用后台暂停轮询，回前台刷新（仍遵守最小间隔）。失败保留旧数据。
 - Flutter 3.50 使用已拆分的 `material_ui` Material 3 包，动态取色依赖使用兼容的 2.x 版本。
+- 中文字体随 App 打包（Noto Sans SC，SIL OFL 1.1），运行时不下载在线字体。许可位于 `assets/fonts/OFL.txt`，App「关于 → 开源许可」可查看。
 
 ## 示意线网
 
 `assets/data/network.json` 包含九条线路、179 个经真实 Dict 解析的站点 ID，坐标为人工示意布局，不是经纬度；站序来自真实 StationList 的 Rank。运行时站名、拼音、编码和线路隶属以 API 目录为准，不把静态几何当作运营信息。
 
 线网支持拖动、缩放、线路筛选、站点点击与复位；放大后显示站名。大屏显示 NavigationRail，地图和站点列表并列，站点详情信息和到站看板双栏。所有时刻仍通过真实 API 获取。
+
+## 行程估算
+
+`RoutePlanner` 使用 `(StationId, LineId)` 状态建图、`collection.HeapPriorityQueue` 执行 Dijkstra。相邻站边权 2 分钟，换乘 4 分钟；起点选择线路不收费，同站行程 0 分钟。同权重优先更少换乘，返回分段站序、换乘站、乘坐站数及预计分钟。
+
+所有结果明确标注“估算，不含候车/延误”。不参与实时到站运算，不提供票价，不保证线路实际可乘；接口目录中标有暂不开通的站仍按原名显示。静态线网缺少或目录已移除的节点不创建虚构捷径。拓扑更新需要同步维护 asset。
+
+## 测试与截图
+
+测试覆盖 Dict 二次解析、鼓楼换乘合并、3/12 号线 Rank 顺序、北京时间和跨午夜倒计时、-60 哨兵、失败重试/去重/限流、缓存和持久化、线网拓扑、地图交互、Dijkstra、320dp 搜索和深色行程估算、大字号免责声明。Android 集成场景使用真实网络验证搜索、方向块、收藏、60 秒轮询、地图与设置。
+
+关键页面截图在 [`screenshots/`](screenshots/)；截图中的空班次为当时真实 API 状态，不是演示数据。iOS 工程已配置，但本次运行验收以 Android 为准。
+- 开发验收：`flutter analyze` 零问题；`flutter test` 24 个测试通过；Android 真实 API 集成场景通过（含实际等待一次 60 秒轮询）；`flutter run -d emulator-5554` 已启动。
+- 目视检查：Android 首页/到站/线网、Web 320dp 深色线网和行程、大屏 NavigationRail + 双栏。
+- 本机已安装 Flutter stable 到 `~/.local/share/flutter/stable`，`~/.local/bin/flutter` / `dart` 可直接使用；工程不依赖此绝对路径。
+- Android release 配置使用开发签名，便于本地运行；尚未配置应用商店分发签名。iOS 未进行模拟器或真机验收。
+
 
 
 ## 数据接口

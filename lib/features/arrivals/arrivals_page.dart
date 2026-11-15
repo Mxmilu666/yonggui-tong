@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../app/theme/line_colors.dart';
 
 import '../../core/models/arrival.dart';
 import '../../core/models/station.dart';
@@ -149,15 +150,18 @@ class ArrivalBoard extends ConsumerWidget {
           compact: true,
           onRetry: () { ref.read(arrivalsProvider(stationId).notifier).refresh(); },
         ),
+        if (snapshot != null) Text('数据更新于 ${now.difference(snapshot.fetchedAt).inMinutes.clamp(0, 9999)} 分钟前',
+          style: Theme.of(context).textTheme.bodySmall),
         const SizedBox(height: 12),
       ],
       if (snapshot == null && state.error == null) const ArrivalSkeleton(),
       if (snapshot != null) ...[
         if (state.loading) const LinearProgressIndicator(semanticsLabel: '正在更新到站时刻'),
         if (snapshot.directions.isEmpty)
-          const EmptyState(title: '该站暂无到站数据', message: '接口未返回方向信息，不能据此判断运营状态。'),
+          const EmptyState(title: '当前时段暂无班次（可能已停运）', message: '接口未返回方向信息，请以车站现场信息为准。'),
         for (final line in lines) ...[
-          if (!compact) ...[LineBadge(lineId: line), const SizedBox(height: 12)],
+          if (!compact) ...[Align(alignment: Alignment.centerLeft,
+            child: LineBadge(lineId: line)), const SizedBox(height: 12)],
           _DirectionGroup(directions: groups[line]!..sort((a, b) => a.flag.compareTo(b.flag)), now: now, compact: compact),
           const SizedBox(height: 16),
         ],
@@ -216,7 +220,9 @@ class _DirectionCard extends StatelessWidget {
       ),
       if (valid.isEmpty) Container(
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerLow, borderRadius: BorderRadius.circular(16), border: Border.all(color: Theme.of(context).colorScheme.outlineVariant)),
+        decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(16),
+          border: Border(left: BorderSide(width: 5, color: LineColors.colorOf(direction.lineId)))),
         child: const Text('暂无有效班次'),
       ),
       for (final run in compact ? valid.take(1) : valid) Padding(

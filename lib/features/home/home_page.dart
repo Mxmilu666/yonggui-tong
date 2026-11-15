@@ -23,7 +23,7 @@ class HomePage extends ConsumerWidget {
     final common = favoriteStations.isNotEmpty
       ? favoriteStations
       : <Station>[
-          for (final name in ['鼓楼', '宁波火车站', '东门口', '三江口'])
+          for (final name in ['鼓楼', '宁波火车站', '东门口（天一广场）'])
             ...?data?.stations.where((station) => station.name == name).take(1),
         ];
     final colors = Theme.of(context).colorScheme;
@@ -95,11 +95,18 @@ class HomePage extends ConsumerWidget {
                       onPressed: () => context.go('/arrivals'),
                       icon: const Icon(Icons.search), label: const Text('选择车站查看到站'),
                     ),
-                    LayoutBuilder(builder: (context, constraints) {
-                      final columns = constraints.maxWidth >= 560 ? 2 : 1;
-                      final width = (constraints.maxWidth - 12 * (columns - 1)) / columns;
-                      return Wrap(spacing: 12, runSpacing: 12, children: [for (final station in common) SizedBox(width: width, child: _CommonStationCard(station: station))]);
-                    }),
+                    LayoutBuilder(builder: (context, constraints) =>
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          for (final station in common) Padding(
+                            padding: const EdgeInsets.only(right: 12),
+                            child: SizedBox(width: constraints.maxWidth >= 560
+                              ? (constraints.maxWidth - 12) / 2 : constraints.maxWidth * .92,
+                              child: _CommonStationCard(station: station)),
+                          ),
+                        ]),
+                      )),
                     const SizedBox(height: 12),
                     Container(
                       padding: const EdgeInsets.all(16),
@@ -111,6 +118,11 @@ class HomePage extends ConsumerWidget {
                       ]),
                     ),
                   ],
+                  const SizedBox(height: 24),
+                  FilledButton.tonalIcon(
+                    onPressed: () => context.push('/planner'),
+                    icon: const Icon(Icons.alt_route), label: const Text('选起终点，估算行程'),
+                  ),
                   const SizedBox(height: 28),
                   Row(children: [
                     Expanded(child: Text('探索线路', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600))),
@@ -160,13 +172,25 @@ class _CommonStationCard extends ConsumerWidget {
           decoration: BoxDecoration(border: Border(left: BorderSide(width: 5, color: LineColors.colorOf(station.lineIds.first)))),
           padding: const EdgeInsets.all(16),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [Expanded(child: Text(station.name, style: Theme.of(context).textTheme.titleLarge)), const Icon(Icons.arrow_forward_rounded, size: 20)]),
+            Row(children: [Expanded(child: Hero(tag: 'station-${station.id}',
+              child: Material(color: Colors.transparent, child: Text(station.name,
+                style: Theme.of(context).textTheme.titleLarge)))),
+              const Icon(Icons.arrow_forward_rounded, size: 20)]),
             const SizedBox(height: 12),
             Wrap(spacing: 6, runSpacing: 6, children: [for (final line in station.lineIds) LineBadge(lineId: line, small: true)]),
             const SizedBox(height: 20),
             if (state.loading && state.snapshot == null) const LinearProgressIndicator(semanticsLabel: '正在查询到站'),
             if (state.snapshot != null) ...[
-              Text(next == null ? '暂无有效班次' : TimeUtils.countdown(TimeUtils.remaining(next.$2.intimeStr, now, intimeDura: next.$2.intimeDura)!), style: Theme.of(context).textTheme.titleLarge?.copyWith(color: colors.primary, fontWeight: FontWeight.w600)),
+              Semantics(label: '${station.name}当前班次状态', child: Chip(
+                visualDensity: VisualDensity.compact,
+                avatar: Icon(next == null ? Icons.bedtime_outlined : Icons.train_outlined, size: 16),
+                label: Text(next == null ? '当前时段暂无班次' : '运营中'),
+              )),
+              Semantics(label: next == null ? '暂无班次' : '下一班 ${TimeUtils.countdown(TimeUtils.remaining(next.$2.intimeStr, now, intimeDura: next.$2.intimeDura)!)}',
+                child: AnimatedSwitcher(duration: const Duration(milliseconds: 200),
+                  child: Text(next == null ? '暂无有效班次' : TimeUtils.countdown(TimeUtils.remaining(next.$2.intimeStr, now, intimeDura: next.$2.intimeDura)!),
+                    key: ValueKey(next?.$2.intimeStr),
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(color: colors.primary, fontWeight: FontWeight.w600)))),
               const SizedBox(height: 8),
               Text(next == null ? '点击查看各线路、各方向' : '${next.$1.lineId}号线 · 方向 ${next.$1.flag} · ${next.$2.intimeStr}', style: Theme.of(context).textTheme.bodySmall?.copyWith(fontFeatures: const [FontFeature.tabularFigures()])),
               const SizedBox(height: 12),
@@ -175,6 +199,10 @@ class _CommonStationCard extends ConsumerWidget {
             if (state.error != null) ...[
               const SizedBox(height: 8),
               Text(state.snapshot == null ? '暂时无法获取到站，点击重试' : '更新失败 · 当前为上次数据', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colors.error)),
+              if (state.snapshot != null) Text('数据更新于 ${now.difference(state.snapshot!.fetchedAt).inMinutes.clamp(0, 9999)} 分钟前',
+                style: Theme.of(context).textTheme.bodySmall),
+              TextButton.icon(onPressed: () => ref.read(arrivalsProvider(station.id).notifier).refresh(),
+                icon: const Icon(Icons.refresh), label: const Text('重试')),
             ],
           ]),
         ),

@@ -71,9 +71,23 @@ void main() {
     final painter = tester.widget<CustomPaint>(find.byWidgetPredicate((w) =>
       w is CustomPaint && w.painter is NetworkPainter)).painter! as NetworkPainter;
     expect(painter.selectedLine, 1);
+    final center = tester.getCenter(find.byType(InteractiveViewer));
+    final left = await tester.startGesture(center - const Offset(30, 0), pointer: 1);
+    final right = await tester.startGesture(center + const Offset(30, 0), pointer: 2);
+    await tester.pump();
+    await left.moveTo(center - const Offset(70, 0));
+    await right.moveTo(center + const Offset(70, 0));
+    await tester.pump();
+    await left.up();
+    await right.up();
+    await tester.pumpAndSettle();
+    expect(viewer.transformationController!.value.entry(0, 0), greaterThan(initial.entry(0, 0)),
+      reason: '首次缩放必须从实际2D比例开始，不能误读z轴的1');
+    await tester.tap(find.byTooltip('重置视图'));
+    await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('放大线网'));
     await tester.pumpAndSettle();
-    expect(viewer.transformationController!.value.getMaxScaleOnAxis(), greaterThan(initial.getMaxScaleOnAxis()));
+    expect(viewer.transformationController!.value.entry(0, 0), greaterThan(initial.entry(0, 0)));
     await tester.tap(find.byTooltip('重置视图'));
     await tester.pumpAndSettle();
     expect(viewer.transformationController!.value, initial);

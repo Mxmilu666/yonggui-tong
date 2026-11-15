@@ -88,6 +88,9 @@ class _StationInformation extends StatelessWidget {
       Wrap(spacing: 8, runSpacing: 8, children: [
         for (final id in station.lineIds) LineBadge(lineId: id),
       ]),
+      const SizedBox(height: 16),
+      FilledButton.tonalIcon(onPressed: () => context.push('/planner?from=${station.id}'),
+        icon: const Icon(Icons.alt_route), label: const Text('从这里出发')),
       const SizedBox(height: 24),
       Text(station.lineIds.length > 1 ? '站内换乘' : '所属线路',
         style: Theme.of(context).textTheme.titleMedium),
