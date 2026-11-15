@@ -69,7 +69,9 @@ Android 需安装 Android SDK 与 JDK 17+；iOS 需 Xcode 与相应模拟器运�
 
 换乘站按 Dict 合并；`0110` / `0242` 对应同一个站，不能直接拿编码请求到站。
 
-以 `IntimeStr` 为权威时刻，按 UTC+8 与当前时间计算倒计时；`IntimeDura <= 0` 视为无车，绝不展示哨兵为到站。未公开的 StationStatus / IsShow 不作为运营状态枚举。方向 Flag 的终点对应关系未公开，因此展示“方向 1 / 2”，不猜测方向。
+以 `IntimeStr` 为权威时刻，按 UTC+8 与当前时间计算倒计时；`IntimeDura <= 0` 视为无车，绝不展示哨兵为到站。未公开的 StationStatus / IsShow 不作为运营状态枚举。
+
+方向显示“往 ××”。`DirectionResolver` 内置已核对的 `LineId + Flag → 终点编码` 关系，编码仍经 Dict 找到当前目录中的官方站名，不把编码当到站 ID。核对来源为官方服务号使用的站点资料（2026-11-16）：[鼓楼](https://metroinfo.ditiego.net/Api/Stations/16)、[鄞州区政府](https://metroinfo.ditiego.net/Api/Stations/88)、[小洋江](https://metroinfo.ditiego.net/Api/Stations/134)、[市中医院](https://metroinfo.ditiego.net/Api/Stations/170)，对应字段 `StationTimes.LineId / Flag / EndStationName`。这些仅在开发时核对，生产 App 不增加接口请求；裁剪依据位于 `test/fixtures/directions.json`。线路方向为本地参考资料，不推断短线车实际终到；缺少映射或目录不一致时提示“终点待确认”。
 
 网络超时 10 秒，失败最多重试 2 次，指数退避；错误和空数据有明确反馈。
 

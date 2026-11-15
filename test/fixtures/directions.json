@@ -1,0 +1,44 @@
+{
+  "verifiedOn": "2026-11-16",
+  "referencePage": "https://wx1.ditiego.net/MetroService/Station/Station?id=7&stationid=54",
+  "sources": [
+    {
+      "url": "https://metroinfo.ditiego.net/Api/Stations/16",
+      "StationTimes": [
+        {"LineId": 1, "Flag": 1, "EndStationName": "霞浦"},
+        {"LineId": 1, "Flag": 2, "EndStationName": "高桥西"},
+        {"LineId": 2, "Flag": 1, "EndStationName": "红联"},
+        {"LineId": 2, "Flag": 2, "EndStationName": "栎社国际机场"}
+      ]
+    },
+    {
+      "url": "https://metroinfo.ditiego.net/Api/Stations/88",
+      "StationTimes": [
+        {"LineId": 3, "Flag": 1, "EndStationName": "大通桥"},
+        {"LineId": 3, "Flag": 2, "EndStationName": "金海路"},
+        {"LineId": 5, "Flag": 1, "EndStationName": "骆驼桥"},
+        {"LineId": 5, "Flag": 2, "EndStationName": "布政"}
+      ]
+    },
+    {
+      "url": "https://metroinfo.ditiego.net/Api/Stations/134",
+      "StationTimes": [
+        {"LineId": 4, "Flag": 1, "EndStationName": "国际会议中心"},
+        {"LineId": 4, "Flag": 2, "EndStationName": "慈城西"},
+        {"LineId": 7, "Flag": 1, "EndStationName": "俞范"},
+        {"LineId": 7, "Flag": 2, "EndStationName": "云龙"},
+        {"LineId": 12, "Flag": 1, "EndStationName": "小洋江"},
+        {"LineId": 12, "Flag": 2, "EndStationName": "大目湾"}
+      ]
+    },
+    {
+      "url": "https://metroinfo.ditiego.net/Api/Stations/170",
+      "StationTimes": [
+        {"LineId": 6, "Flag": 1, "EndStationName": "红联"},
+        {"LineId": 6, "Flag": 2, "EndStationName": "古林"},
+        {"LineId": 8, "Flag": 1, "EndStationName": "开元路"},
+        {"LineId": 8, "Flag": 2, "EndStationName": "寒松路"}
+      ]
+    }
+  ]
+}

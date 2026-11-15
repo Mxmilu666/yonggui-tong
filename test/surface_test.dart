@@ -84,8 +84,9 @@ void main() {
     await tester.tap(find.widgetWithText(ListTile, '鼓楼'));
     await tester.pumpAndSettle();
     expect(router.routeInformationProvider.value.uri.path, '/arrivals/16');
-    expect(find.text('方向 1'), findsNWidgets(2));
-    expect(find.text('方向 2'), findsNWidgets(2));
+    for (final destination in ['霞浦', '高桥西', '红联', '栎社国际机场']) {
+      expect(find.text('往 $destination'), findsOneWidget);
+    }
     expect(find.text('暂无有效班次'), findsNWidgets(4));
     expect(find.text('01:27:04'), findsNothing);
     expect(find.text('已停运'), findsNothing);
@@ -110,6 +111,27 @@ void main() {
     ])))));
     await tester.pumpAndSettle();
     expect(find.text('暂无有效班次'), findsNWidgets(4));
+    for (final destination in ['霞浦', '高桥西', '红联', '栎社国际机场']) {
+      expect(find.text('往 $destination'), findsOneWidget);
+    }
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('首页下一班使用同一终点名称，不泄露方向编号', (tester) async {
+    tester.view.physicalSize = const Size(320, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final gulou = catalog.search('鼓楼').single;
+    await preferences.setStringList('metro.favorites.v1', ['${gulou.id}']);
+    snapshot = ArrivalSnapshot(stationId: gulou.id, fetchedAt: now, directions: [
+      ArrivalDirection(lineId: 2, flag: 2, stationId: gulou.id, observedAt: now, runs: [
+        const ArrivalRun(sequence: 1, intimeStr: '01:29:00', outTimeStr: '01:29:20', intimeDura: 1),
+      ]),
+    ]);
+    await tester.pumpWidget(scope(MaterialApp(home: const HomePage())));
+    await tester.pumpAndSettle();
+    expect(find.text('2号线 · 往 栎社国际机场 · 01:29:00'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

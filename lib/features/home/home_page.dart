@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/theme/line_colors.dart';
 import '../../core/models/arrival.dart';
 import '../../core/models/station.dart';
+import '../../core/utils/direction_resolver.dart';
 import '../../core/utils/time_utils.dart';
 import '../../core/widgets/error_state.dart';
 import '../../core/widgets/line_badge.dart';
@@ -156,6 +157,7 @@ class _CommonStationCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(arrivalsProvider(station.id));
     final now = ref.watch(nowProvider).valueOrNull ?? DateTime.now().toUtc();
+    final catalog = ref.watch(catalogProvider).valueOrNull;
     final valid = <(ArrivalDirection, ArrivalRun)>[
       for (final direction in state.snapshot?.directions ?? <ArrivalDirection>[])
         for (final run in direction.validRuns(now)) (direction, run),
@@ -192,7 +194,9 @@ class _CommonStationCard extends ConsumerWidget {
                     key: ValueKey(next?.$2.intimeStr),
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(color: colors.primary, fontWeight: FontWeight.w600)))),
               const SizedBox(height: 8),
-              Text(next == null ? '点击查看各线路、各方向' : '${next.$1.lineId}号线 · 方向 ${next.$1.flag} · ${next.$2.intimeStr}', style: Theme.of(context).textTheme.bodySmall?.copyWith(fontFeatures: const [FontFeature.tabularFigures()])),
+              Text(next == null ? '点击查看各线路、各方向' :
+                '${next.$1.lineId}号线 · ${DirectionResolver.label(lineId: next.$1.lineId, flag: next.$1.flag, catalog: catalog)} · ${next.$2.intimeStr}',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(fontFeatures: const [FontFeature.tabularFigures()])),
               const SizedBox(height: 12),
               Text('更新于 ${TimeUtils.formatBeijing(state.snapshot!.fetchedAt)}', style: Theme.of(context).textTheme.labelSmall?.copyWith(color: colors.onSurfaceVariant)),
             ],

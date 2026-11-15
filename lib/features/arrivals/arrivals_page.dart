@@ -5,6 +5,7 @@ import '../../app/theme/line_colors.dart';
 
 import '../../core/models/arrival.dart';
 import '../../core/models/station.dart';
+import '../../core/utils/direction_resolver.dart';
 import '../../core/utils/time_utils.dart';
 import '../../core/widgets/arrival_tile.dart';
 import '../../core/widgets/empty_state.dart';
@@ -130,6 +131,7 @@ class ArrivalBoard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(arrivalsProvider(stationId));
+    final catalog = ref.watch(catalogProvider).valueOrNull;
     final now = ref.watch(nowProvider).valueOrNull ?? DateTime.now().toUtc();
     final snapshot = state.snapshot;
     final groups = <int, List<ArrivalDirection>>{};
@@ -162,7 +164,8 @@ class ArrivalBoard extends ConsumerWidget {
         for (final line in lines) ...[
           if (!compact) ...[Align(alignment: Alignment.centerLeft,
             child: LineBadge(lineId: line)), const SizedBox(height: 12)],
-          _DirectionGroup(directions: groups[line]!..sort((a, b) => a.flag.compareTo(b.flag)), now: now, compact: compact),
+          _DirectionGroup(directions: groups[line]!..sort((a, b) => a.flag.compareTo(b.flag)),
+            now: now, compact: compact, catalog: catalog),
           const SizedBox(height: 16),
         ],
         Wrap(spacing: 8, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
@@ -176,33 +179,38 @@ class ArrivalBoard extends ConsumerWidget {
       ],
       if (!compact) ...[
         const SizedBox(height: 12),
-        Text('暂无有效班次不代表已停运。方向编号由接口提供，暂无可靠的终点方向对应信息。', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+        Text('暂无有效班次不代表已停运。方向按已核对的线路终点资料展示，仅供参考；短线列车实际终到请以站台显示为准。', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
       ],
     ]);
   }
 }
 
 class _DirectionGroup extends StatelessWidget {
-  const _DirectionGroup({required this.directions, required this.now, required this.compact});
+  const _DirectionGroup({required this.directions, required this.now,
+    required this.compact, required this.catalog});
   final List<ArrivalDirection> directions;
   final DateTime now;
   final bool compact;
+  final StationCatalog? catalog;
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(builder: (context, constraints) {
     final columns = constraints.maxWidth >= 560 && !compact ? 2 : 1;
     final width = (constraints.maxWidth - (columns - 1) * 12) / columns;
     return Wrap(spacing: 12, runSpacing: 12, children: [
-      for (final direction in directions) SizedBox(width: width, child: _DirectionCard(direction: direction, now: now, compact: compact)),
+      for (final direction in directions) SizedBox(width: width,
+        child: _DirectionCard(direction: direction, now: now, compact: compact, catalog: catalog)),
     ]);
   });
 }
 
 class _DirectionCard extends StatelessWidget {
-  const _DirectionCard({required this.direction, required this.now, required this.compact});
+  const _DirectionCard({required this.direction, required this.now,
+    required this.compact, required this.catalog});
   final ArrivalDirection direction;
   final DateTime now;
   final bool compact;
+  final StationCatalog? catalog;
 
   @override
   Widget build(BuildContext context) {
@@ -214,7 +222,8 @@ class _DirectionCard extends StatelessWidget {
         padding: const EdgeInsets.only(bottom: 8),
         child: Wrap(spacing: 8, runSpacing: 8, crossAxisAlignment: WrapCrossAlignment.center, children: [
           if (compact) LineBadge(lineId: direction.lineId, small: true),
-          Text('方向 ${direction.flag}', style: Theme.of(context).textTheme.titleSmall),
+          Text(DirectionResolver.label(lineId: direction.lineId,
+            flag: direction.flag, catalog: catalog), style: Theme.of(context).textTheme.titleSmall),
           const Icon(Icons.arrow_forward_rounded, size: 16),
         ]),
       ),
