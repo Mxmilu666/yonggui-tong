@@ -47,101 +47,91 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   Widget build(BuildContext context) {
     final settings = ref.watch(settingsProvider);
     final favoriteCount = ref.watch(favoritesProvider).length;
+    final routeCount = ref.watch(favoriteRoutesProvider).length;
+    const segmentStyle = ButtonStyle(visualDensity: VisualDensity.standard);
     return Scaffold(
-      appBar: AppBar(title: const Text('我的与设置')),
+      appBar: AppBar(title: const Text('我的')),
       body: Center(child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 720),
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+          padding: const EdgeInsets.only(bottom: 32),
           children: [
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer, borderRadius: BorderRadius.circular(24)),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Icon(Icons.bookmarks_outlined, size: 32, color: Theme.of(context).colorScheme.onPrimaryContainer),
-                const SizedBox(height: 16),
-                Text('把常用站留在手边', style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Theme.of(context).colorScheme.onPrimaryContainer)),
-                const SizedBox(height: 8),
-                Text('已收藏 $favoriteCount 个车站 · 仅保存在本机', style: TextStyle(color: Theme.of(context).colorScheme.onPrimaryContainer)),
-                const SizedBox(height: 16),
-                FilledButton.tonalIcon(onPressed: () => context.go('/arrivals'), icon: const Icon(Icons.star_outline_rounded), label: const Text('查看收藏车站')),
-              ]),
+            const _SectionTitle('收藏'),
+            ListTile(
+              leading: const Icon(Icons.star_outline_rounded),
+              title: const Text('收藏车站'),
+              subtitle: Text('$favoriteCount 个 · 仅保存在本机'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.go('/arrivals'),
             ),
-            const SizedBox(height: 24),
+            ListTile(
+              leading: const Icon(Icons.favorite_border),
+              title: const Text('收藏路线'),
+              subtitle: Text('$routeCount 条 · 显示在首页'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.go('/'),
+            ),
             const _SectionTitle('外观'),
-            Card(margin: EdgeInsets.zero, child: Column(children: [
-              ListTile(
-                leading: const Icon(Icons.palette_outlined),
-                title: const Text('主题模式'),
-                subtitle: Text(switch (settings.themeMode) { ThemeMode.system => '跟随系统', ThemeMode.light => '浅色', ThemeMode.dark => '深色' }),
-                trailing: const Icon(Icons.chevron_right),
-                enabled: !_saving,
-                onTap: () async {
-                  final mode = await showModalBottomSheet<ThemeMode>(context: context, showDragHandle: true, useSafeArea: true, builder: (context) => Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: Column(mainAxisSize: MainAxisSize.min, children: [
-                      for (final option in ThemeMode.values) ListTile(
-                        title: Text(switch (option) { ThemeMode.system => '跟随系统', ThemeMode.light => '浅色', ThemeMode.dark => '深色' }),
-                        trailing: option == settings.themeMode ? const Icon(Icons.check) : null,
-                        onTap: () => Navigator.of(context).pop(option),
-                      ),
-                    ]),
-                  ));
-                  if (mode != null && mounted) await _save(() => ref.read(settingsProvider.notifier).setThemeMode(mode));
-                },
+            const ListTile(leading: Icon(Icons.palette_outlined), title: Text('主题模式')),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: SegmentedButton<ThemeMode>(
+                style: segmentStyle,
+                showSelectedIcon: false,
+                segments: const [
+                  ButtonSegment(value: ThemeMode.system, label: Text('跟随系统')),
+                  ButtonSegment(value: ThemeMode.light, label: Text('浅色')),
+                  ButtonSegment(value: ThemeMode.dark, label: Text('深色')),
+                ],
+                selected: {settings.themeMode},
+                onSelectionChanged: _saving ? null
+                  : (value) => _save(() => ref.read(settingsProvider.notifier).setThemeMode(value.single)),
               ),
-              const Divider(height: 1, indent: 16, endIndent: 16),
-              SwitchListTile(
-                secondary: const Icon(Icons.color_lens_outlined),
-                title: const Text('动态取色'),
-                subtitle: const Text('在支持的设备上使用系统配色'),
-                value: settings.dynamicColor,
-                onChanged: _saving ? null : (value) => _save(() => ref.read(settingsProvider.notifier).setDynamicColor(value)),
-              ),
-            ])),
-            const SizedBox(height: 24),
+            ),
+            SwitchListTile(
+              secondary: const Icon(Icons.color_lens_outlined),
+              title: const Text('动态取色'),
+              subtitle: const Text('在支持的设备上使用系统配色'),
+              value: settings.dynamicColor,
+              onChanged: _saving ? null : (value) => _save(() => ref.read(settingsProvider.notifier).setDynamicColor(value)),
+            ),
             const _SectionTitle('数据与刷新'),
-            Card(margin: EdgeInsets.zero, child: Column(children: [
-              ListTile(
-                leading: const Icon(Icons.update_rounded),
-                title: const Text('到站自动刷新'),
-                subtitle: Text('每 ${settings.refreshSeconds} 秒 · 退到后台时暂停'),
-                trailing: const Icon(Icons.chevron_right),
-                enabled: !_saving,
-                onTap: () async {
-                  final seconds = await showModalBottomSheet<int>(context: context, showDragHandle: true, useSafeArea: true, builder: (context) => Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: Column(mainAxisSize: MainAxisSize.min, children: [
-                      for (final interval in [60, 120]) ListTile(
-                        title: Text('每 $interval 秒'),
-                        trailing: settings.refreshSeconds == interval ? const Icon(Icons.check) : null,
-                        onTap: () => Navigator.of(context).pop(interval),
-                      ),
-                    ]),
-                  ));
-                  if (seconds != null && mounted) await _save(() => ref.read(settingsProvider.notifier).setRefreshSeconds(seconds));
-                },
+            const ListTile(
+              leading: Icon(Icons.update_rounded),
+              title: Text('到站自动刷新'),
+              subtitle: Text('退到后台时暂停，回到前台立即刷新'),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: SegmentedButton<int>(
+                style: segmentStyle,
+                showSelectedIcon: false,
+                segments: const [
+                  ButtonSegment(value: 60, label: Text('每 60 秒')),
+                  ButtonSegment(value: 120, label: Text('每 120 秒')),
+                ],
+                selected: {settings.refreshSeconds},
+                onSelectionChanged: _saving ? null
+                  : (value) => _save(() => ref.read(settingsProvider.notifier).setRefreshSeconds(value.single)),
               ),
-              const Divider(height: 1, indent: 16, endIndent: 16),
-              ListTile(
-                leading: const Icon(Icons.cleaning_services_outlined),
-                title: const Text('清除车站缓存'),
-                subtitle: const Text('不影响收藏与设置'),
-                trailing: const Icon(Icons.chevron_right),
-                enabled: !_saving,
-                onTap: _clearCache,
-              ),
-            ])),
-            if (_saving) const Padding(padding: EdgeInsets.only(top: 12), child: LinearProgressIndicator(semanticsLabel: '正在保存设置')),
-            const SizedBox(height: 24),
+            ),
+            ListTile(
+              leading: const Icon(Icons.cleaning_services_outlined),
+              title: const Text('清除车站缓存'),
+              subtitle: const Text('不影响收藏与设置'),
+              enabled: !_saving,
+              onTap: _clearCache,
+            ),
+            if (_saving) const Padding(padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: LinearProgressIndicator(semanticsLabel: '正在保存设置')),
             const _SectionTitle('关于'),
-            Card(margin: EdgeInsets.zero, child: ListTile(
+            ListTile(
               leading: const Icon(Icons.info_outline_rounded),
               title: const Text('关于甬轨通'),
               subtitle: const Text('版本 1.0.0 · 数据来源与免责声明'),
               trailing: const Icon(Icons.chevron_right),
               onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const AboutPage())),
-            )),
+            ),
           ],
         ),
       )),
@@ -155,8 +145,9 @@ class _SectionTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(left: 4, bottom: 12),
-    child: Text(title, style: Theme.of(context).textTheme.titleSmall?.copyWith(color: Theme.of(context).colorScheme.primary)),
+    padding: const EdgeInsets.fromLTRB(16, 24, 16, 4),
+    child: Semantics(header: true, child: Text(title, style: Theme.of(context).textTheme.titleSmall
+      ?.copyWith(color: Theme.of(context).colorScheme.primary))),
   );
 }
 

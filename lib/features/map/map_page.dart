@@ -8,6 +8,7 @@ import '../../app/theme/line_colors.dart';
 import '../../core/models/line.dart';
 import '../../core/models/station.dart';
 import '../../data/providers.dart';
+import '../../core/widgets/line_badge.dart';
 import '../arrivals/arrivals_page.dart';
 import 'network_painter.dart';
 
@@ -67,7 +68,9 @@ class _MapPageState extends ConsumerState<MapPage> {
             children: [
               Text(station.name, style: Theme.of(context).textTheme.headlineSmall),
               const SizedBox(height: 8),
-              Text(station.lineIds.map((line) => '$line号线').join(' · ')),
+              Wrap(spacing: 6, runSpacing: 6, children: [
+                for (final line in station.lineIds) LineBadge(lineId: line),
+              ]),
               const SizedBox(height: 16),
               ArrivalBoard(stationId: id, compact: true),
               const SizedBox(height: 16),

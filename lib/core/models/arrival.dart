@@ -29,6 +29,13 @@ class ArrivalDirection {
     return runs.where((run) => TimeUtils.remaining(run.intimeStr, now,
       intimeDura: run.intimeDura) != null).toList();
   }
+  /// Valid runs ordered by time to arrival (handles the midnight rollover).
+  List<ArrivalRun> upcoming(DateTime now) {
+    final runs = validRuns(now);
+    Duration left(ArrivalRun run) => TimeUtils.remaining(run.intimeStr, now, intimeDura: run.intimeDura)!;
+    runs.sort((a, b) => left(a).compareTo(left(b)));
+    return runs;
+  }
 }
 
 class ArrivalSnapshot {

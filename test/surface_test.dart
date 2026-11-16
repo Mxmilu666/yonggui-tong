@@ -15,6 +15,10 @@ import 'package:yonggui_tong/features/arrivals/arrivals_page.dart';
 import 'package:yonggui_tong/features/home/home_page.dart';
 import 'package:yonggui_tong/features/settings/settings_page.dart';
 import 'package:yonggui_tong/features/planner/planner_page.dart';
+import 'package:yonggui_tong/app/router.dart';
+import 'package:yonggui_tong/core/models/favorite_route.dart';
+import 'package:yonggui_tong/data/repositories/favorites_repository.dart';
+import 'package:yonggui_tong/features/home/favorite_route_card.dart';
 
 class _FixtureCatalog extends CatalogController {
   _FixtureCatalog(this.catalog);
@@ -131,7 +135,32 @@ void main() {
     ]);
     await tester.pumpWidget(scope(MaterialApp(home: const HomePage())));
     await tester.pumpAndSettle();
-    expect(find.text('2号线 · 往 栎社国际机场 · 01:29:00'), findsOneWidget);
+    expect(find.text('往 栎社国际机场'), findsOneWidget);
+    expect(find.text('01:29'), findsOneWidget);
+    expect(find.textContaining('方向'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('点击首页收藏路线卡片，按起终点打开行程估算', (tester) async {
+    tester.view.physicalSize = const Size(320, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final from = catalog.search('东门口（天一广场）').single;
+    final to = catalog.search('城隍庙').single;
+    await preferences.setStringList(FavoritesRepository.routesStorageKey, [
+      jsonEncode(FavoriteRoute(originId: from.id, destinationId: to.id, name: '东门口 → 城隍庙').toJson()),
+    ]);
+    await tester.pumpWidget(scope(MaterialApp.router(routerConfig: appRouter)));
+    await tester.pumpAndSettle();
+    final card = find.byType(FavoriteRouteCard);
+    await tester.ensureVisible(card);
+    await tester.pumpAndSettle();
+    await tester.tap(card);
+    await tester.pumpAndSettle();
+    final planner = tester.widget<PlannerPage>(find.byType(PlannerPage));
+    expect((planner.originId, planner.destinationId), (from.id, to.id));
+    expect(find.text('8 分钟'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

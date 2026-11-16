@@ -25,4 +25,19 @@ abstract final class DirectionResolver {
     }
     return '往 ${station.name}';
   }
+
+  /// Flag of the direction that runs from [fromId] toward [toId] on [lineId], derived
+  /// from the official station order and the verified terminal of each Flag.
+  static int? flagToward({required int lineId, required int fromId, required int toId,
+      required StationCatalog catalog}) {
+    final order = [for (final station in catalog.stationsForLine(lineId)) station.id];
+    final from = order.indexOf(fromId), to = order.indexOf(toId);
+    if (from < 0 || to < 0 || from == to) return null;
+    for (final flag in const [1, 2]) {
+      final code = _terminalCodes[(lineId, flag)];
+      final terminal = code == null ? -1 : order.indexOf(catalog.dictionary[code] ?? -1);
+      if (terminal >= 0 && (terminal - from).sign == (to - from).sign) return flag;
+    }
+    return null;
+  }
 }

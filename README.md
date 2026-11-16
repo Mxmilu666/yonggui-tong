@@ -45,12 +45,14 @@ Android 需安装 Android SDK 与 JDK 17+；iOS 需 Xcode 与相应模拟器运�
 
 所有结果明确标注“估算，不含候车/延误”。不参与实时到站运算，不提供票价，不保证线路实际可乘；接口目录中标有暂不开通的站仍按原名显示。静态线网缺少或目录已移除的节点不创建虚构捷径。拓扑更新需要同步维护 asset。
 
+行程结果可收藏，收藏路线显示在首页，点击回到对应起终点的估算页。卡片上的换乘间隔只读取换乘站自己的 `ScheduleTime`：按站序与已核对的方向终点确定前后两段的行进 Flag，取来线下一班 `IntimeStr` 与其后第一班去线 `OutTimeStr` 的差值，不足 5 分钟高亮提示。它是时刻表推算，不代表你实际会搭乘的那一班。
+
 ## 测试与截图
 
-测试覆盖 Dict 二次解析、鼓楼换乘合并、3/12 号线 Rank 顺序、北京时间和跨午夜倒计时、-60 哨兵、失败重试/去重/限流、缓存和持久化、线网拓扑、地图交互、Dijkstra、320dp 搜索和深色行程估算、大字号免责声明。Android 集成场景使用真实网络验证搜索、方向块、收藏、60 秒轮询、地图与设置。
+测试覆盖 Dict 二次解析、鼓楼换乘合并、3/12 号线 Rank 顺序、北京时间和跨午夜倒计时、-60 哨兵、失败重试/去重/限流、缓存和持久化、线网拓扑、地图交互、Dijkstra、换乘间隔的方向选取、收藏路线跳转、320dp 搜索和深色行程估算、大字号免责声明。Android 集成场景使用真实网络验证搜索、方向块、收藏、60 秒轮询、地图与设置。
 
 关键页面截图在 [`screenshots/`](screenshots/)；截图中的空班次为当时真实 API 状态，不是演示数据。iOS 工程已配置，但本次运行验收以 Android 为准。
-- 开发验收：`flutter analyze` 零问题；`flutter test` 24 个测试通过；Android 真实 API 集成场景通过（含实际等待一次 60 秒轮询）；`flutter run -d emulator-5554` 已启动。
+- 开发验收：`flutter analyze` 零问题；`flutter test` 30 个测试通过；Android 真实 API 集成场景通过（含实际等待一次 60 秒轮询）；`flutter run -d emulator-5554` 已启动。
 - 目视检查：Android 首页/到站/线网、Web 320dp 深色线网和行程、大屏 NavigationRail + 双栏。
 - 本机已安装 Flutter stable 到 `~/.local/share/flutter/stable`，`~/.local/bin/flutter` / `dart` 可直接使用；工程不依赖此绝对路径。
 - Android release 配置使用开发签名，便于本地运行；尚未配置应用商店分发签名。iOS 未进行模拟器或真机验收。

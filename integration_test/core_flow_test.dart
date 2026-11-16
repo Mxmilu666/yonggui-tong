@@ -86,15 +86,11 @@ void main() {
     appRouter.go('/settings');
     await tester.pumpAndSettle();
     expect(find.text('外观'), findsOneWidget);
-    await tester.tap(find.text('主题模式'));
-    await tester.pumpAndSettle();
     await tester.tap(find.text('深色'));
     await tester.pumpAndSettle();
     expect(Theme.of(tester.element(find.text('外观'))).brightness, Brightness.dark);
-    await tester.scrollUntilVisible(find.text('到站自动刷新'), 250,
+    await tester.scrollUntilVisible(find.text('每 120 秒'), 250,
       scrollable: find.byType(Scrollable).first);
-    await tester.tap(find.text('到站自动刷新'));
-    await tester.pumpAndSettle();
     await tester.tap(find.text('每 120 秒'));
     await tester.pumpAndSettle();
     expect(container.read(settingsProvider).refreshSeconds, 120);

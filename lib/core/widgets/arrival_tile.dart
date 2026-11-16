@@ -1,9 +1,43 @@
 import 'package:material_ui/material_ui.dart';
 
 import '../models/arrival.dart';
-import '../../app/theme/line_colors.dart';
 import '../utils/time_utils.dart';
 
+const _tabular = [FontFeature.tabularFigures()];
+
+/// Minutes until arrival as "3 分钟" with a large number, or "即将到站" within one minute.
+class CountdownText extends StatelessWidget {
+  const CountdownText({super.key, required this.remaining, this.large = true});
+
+  final Duration remaining;
+  final bool large;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    final color = Theme.of(context).colorScheme.primary;
+    final label = TimeUtils.countdown(remaining);
+    final soon = remaining.inMilliseconds <= 60000;
+    final number = large ? text.headlineMedium : text.titleLarge;
+    final unit = large ? text.titleSmall : text.labelMedium;
+    return Semantics(
+      label: label,
+      child: ExcludeSemantics(child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 200),
+        child: soon
+          ? Text('即将到站', key: const ValueKey('soon'),
+              style: (large ? text.titleLarge : text.titleMedium)?.copyWith(color: color, fontWeight: FontWeight.w600))
+          : Text.rich(key: ValueKey(label), TextSpan(children: [
+              TextSpan(text: '${(remaining.inMilliseconds / 60000).ceil()}',
+                style: number?.copyWith(color: color, fontWeight: FontWeight.w600, fontFeatures: _tabular)),
+              TextSpan(text: ' 分钟', style: unit?.copyWith(color: color)),
+            ])),
+      )),
+    );
+  }
+}
+
+/// A later run of one direction: scheduled time, train sequence and countdown.
 class ArrivalTile extends StatelessWidget {
   const ArrivalTile({super.key, required this.lineId, required this.run, required this.now});
 
@@ -15,61 +49,25 @@ class ArrivalTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final remaining = TimeUtils.remaining(run.intimeStr, now, intimeDura: run.intimeDura);
     if (remaining == null) return const SizedBox.shrink();
+    final text = Theme.of(context).textTheme;
+    final muted = Theme.of(context).colorScheme.onSurfaceVariant;
     final countdown = TimeUtils.countdown(remaining);
-    final urgent = remaining.inMinutes <= 3;
-    return Card(
-      margin: EdgeInsets.zero,
-      elevation: 1,
-      child: Semantics(
-        label: '$lineId号线，到站时刻 ${run.intimeStr}，$countdown，第${run.sequence}班',
-        child: ExcludeSemantics(
-          child: Container(
-            decoration: BoxDecoration(
-              border: Border(left: BorderSide(width: 6, color: LineColors.colorOf(lineId))),
-              borderRadius: const BorderRadius.horizontal(left: Radius.circular(12)),
-            ),
-            padding: const EdgeInsets.all(16),
-            child: Row(children: [
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(run.intimeStr, style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontFeatures: const [FontFeature.tabularFigures()],
-                  fontWeight: FontWeight.w600,
-                  color: urgent ? Theme.of(context).colorScheme.error : null,
-                )),
-                const SizedBox(height: 6),
-                Row(children: [
-                  Icon(urgent ? Icons.warning_amber_rounded : Icons.schedule_rounded,
-                    size: 16, color: urgent ? Theme.of(context).colorScheme.error : Theme.of(context).colorScheme.onSurfaceVariant),
-                  const SizedBox(width: 6),
-                  Flexible(child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 200),
-                    child: Text(countdown, key: ValueKey(countdown),
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: urgent ? Theme.of(context).colorScheme.error : Theme.of(context).colorScheme.onSurfaceVariant,
-                        fontWeight: urgent ? FontWeight.w600 : null,
-                      )))),
-                ]),
-              ])),
-              Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: LineColors.colorOf(lineId).withAlpha(30),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text('$lineId号线', style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: LineColors.colorOf(lineId),
-                    fontWeight: FontWeight.w600,
-                  )),
-                ),
-                const SizedBox(height: 6),
-                Text('第${run.sequence}班', style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant)),
-              ]),
-            ]),
+    return Semantics(
+      label: '$lineId号线，到站时刻 ${run.intimeStr}，$countdown，第${run.sequence}班',
+      child: ExcludeSemantics(child: SizedBox(
+        height: 36,
+        child: Row(children: [
+          Text(run.intimeStr, style: text.bodyLarge?.copyWith(fontFeatures: _tabular)),
+          const SizedBox(width: 8),
+          Text('第${run.sequence}班', style: text.labelSmall?.copyWith(color: muted)),
+          const Spacer(),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 200),
+            child: Text(countdown, key: ValueKey(countdown),
+              style: text.bodyMedium?.copyWith(color: muted, fontFeatures: _tabular)),
           ),
-        ),
-      ),
+        ]),
+      )),
     );
   }
 }

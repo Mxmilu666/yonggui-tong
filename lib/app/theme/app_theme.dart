@@ -13,59 +13,20 @@ abstract final class AppTheme {
       useMaterial3: true,
       colorScheme: scheme,
       brightness: brightness,
-      visualDensity: VisualDensity.standard,
-      scaffoldBackgroundColor: scheme.surface,
       fontFamily: 'YongguiSans',
       fontFamilyFallback: const ['PingFang SC', 'Noto Sans CJK SC', 'sans-serif'],
     );
     return base.copyWith(
-      appBarTheme: AppBarTheme(
-        centerTitle: false,
-        backgroundColor: scheme.surface,
-        surfaceTintColor: Colors.transparent,
+      appBarTheme: const AppBarTheme(centerTitle: false),
+      // Shape is left to each variant so Card.outlined keeps its MD3 border.
+      cardTheme: const CardThemeData(margin: EdgeInsets.zero, clipBehavior: Clip.antiAlias),
+      searchBarTheme: SearchBarThemeData(
+        elevation: const WidgetStatePropertyAll(0),
+        backgroundColor: WidgetStatePropertyAll(scheme.surfaceContainerHigh),
+        padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 16)),
       ),
-      cardTheme: CardThemeData(
-        elevation: 0,
-        margin: EdgeInsets.zero,
-        color: scheme.surfaceContainerLow,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: BorderSide(color: scheme.outlineVariant.withValues(alpha: .65)),
-        ),
-        clipBehavior: Clip.antiAlias,
-      ),
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: scheme.surfaceContainerHighest,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide.none,
-        ),
-      ),
-      navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: scheme.surfaceContainer,
-        indicatorColor: scheme.secondaryContainer,
-        height: 76,
-      ),
-      navigationRailTheme: NavigationRailThemeData(
-        backgroundColor: scheme.surfaceContainerLow,
-        indicatorColor: scheme.secondaryContainer,
-        useIndicator: true,
-      ),
-      chipTheme: base.chipTheme.copyWith(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        side: BorderSide(color: scheme.outlineVariant),
-      ),
-      filledButtonTheme: FilledButtonThemeData(
-        style: FilledButton.styleFrom(
-          minimumSize: const Size(48, 48),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        ),
-      ),
-      snackBarTheme: SnackBarThemeData(
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
+      listTileTheme: const ListTileThemeData(contentPadding: EdgeInsets.symmetric(horizontal: 16)),
+      snackBarTheme: const SnackBarThemeData(behavior: SnackBarBehavior.floating),
       dividerTheme: DividerThemeData(color: scheme.outlineVariant, space: 1),
     );
   }

@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/models/favorite_route.dart';
 import '../../core/models/route_plan.dart';
 import '../../core/models/station.dart';
-import '../../core/utils/time_utils.dart';
+import '../../core/utils/transfer_timing.dart';
 import '../../core/widgets/line_badge.dart';
 import '../../data/providers.dart';
 import '../planner/planner_page.dart' show routePlannerProvider;
@@ -19,64 +19,42 @@ class FavoriteRouteCard extends ConsumerWidget {
     final catalog = ref.watch(catalogProvider).valueOrNull;
     final planner = ref.watch(routePlannerProvider).valueOrNull;
     final now = ref.watch(nowProvider).valueOrNull ?? DateTime.now().toUtc();
-    
-    if (catalog == null || planner == null) {
-      return const SizedBox.shrink();
-    }
+    final origin = catalog?.stationById(route.originId);
+    final destination = catalog?.stationById(route.destinationId);
+    final plan = origin == null || destination == null ? null : planner?.estimate(origin.id, destination.id);
+    if (catalog == null || plan == null) return const SizedBox.shrink();
 
-    final origin = catalog.stationById(route.originId);
-    final destination = catalog.stationById(route.destinationId);
-    if (origin == null || destination == null) {
-      return const SizedBox.shrink();
-    }
-
-    final plan = planner.estimate(origin.id, destination.id);
-    if (plan == null) {
-      return const SizedBox.shrink();
-    }
-
+    final text = Theme.of(context).textTheme;
     final colors = Theme.of(context).colorScheme;
-    final transferWarnings = _checkTransferTiming(plan, catalog, ref, now);
-
-    return Card(
-      margin: EdgeInsets.zero,
-      elevation: 2,
-      clipBehavior: Clip.antiAlias,
+    final connections = <TransferConnection>[
+      for (var index = 0; index < plan.segments.length - 1; index++)
+        ?_connection(ref, plan, index, catalog, now),
+    ];
+    return Card.outlined(
       child: InkWell(
         onTap: () => context.push('/planner?from=${route.originId}&to=${route.destinationId}'),
-        child: Container(
-          decoration: BoxDecoration(
-            border: Border(left: BorderSide(width: 6, color: colors.primary)),
-          ),
-          padding: const EdgeInsets.all(20),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-              Expanded(child: Text('${origin.name} → ${destination.name}',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600))),
-              Icon(Icons.arrow_forward_rounded, size: 24, color: colors.onSurfaceVariant),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Expanded(child: Text('${origin!.name} → ${destination!.name}', style: text.titleMedium)),
+              const SizedBox(width: 12),
+              Text('约 ${plan.minutes} 分钟', style: text.titleSmall?.copyWith(color: colors.primary,
+                fontFeatures: const [FontFeature.tabularFigures()])),
             ]),
-            const SizedBox(height: 16),
-            Wrap(spacing: 8, runSpacing: 8, children: [
-              for (final segment in plan.segments) LineBadge(lineId: segment.lineId, small: true),
+            const SizedBox(height: 8),
+            Wrap(spacing: 4, runSpacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [
+              for (final (index, segment) in plan.segments.indexed) ...[
+                if (index > 0) Icon(Icons.chevron_right, size: 16, color: colors.onSurfaceVariant),
+                LineBadge(lineId: segment.lineId, small: true),
+              ],
+              const SizedBox(width: 4),
+              Text('${plan.stops} 站 · ${plan.transfers == 0 ? '无需换乘' : '换乘 ${plan.transfers} 次'}',
+                style: text.bodySmall?.copyWith(color: colors.onSurfaceVariant)),
             ]),
-            const SizedBox(height: 16),
-            Row(children: [
-              Icon(Icons.schedule, size: 16, color: colors.onSurfaceVariant),
-              const SizedBox(width: 6),
-              Text('${plan.minutes} 分钟 · ${plan.stops} 站${plan.transfers > 0 ? ' · ${plan.transfers} 次换乘' : ''}',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colors.onSurfaceVariant)),
-            ]),
-            if (transferWarnings.isNotEmpty) ...[
+            for (final connection in connections) ...[
               const SizedBox(height: 12),
-              ...transferWarnings.map((warning) => Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Icon(Icons.warning_amber_rounded, size: 16, color: colors.error),
-                  const SizedBox(width: 6),
-                  Expanded(child: Text(warning, style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: colors.error, fontWeight: FontWeight.w600))),
-                ]),
-              )),
+              _TransferNote(connection: connection, station: catalog.stationById(connection.stationId)!),
             ],
           ]),
         ),
@@ -84,51 +62,48 @@ class FavoriteRouteCard extends ConsumerWidget {
     );
   }
 
-  List<String> _checkTransferTiming(RoutePlan plan, StationCatalog catalog, WidgetRef ref, DateTime now) {
-    final warnings = <String>[];
-    if (plan.segments.length < 2) return warnings;
+  TransferConnection? _connection(WidgetRef ref, RoutePlan plan, int index, StationCatalog catalog, DateTime now) {
+    final snapshot = ref.watch(arrivalsProvider(plan.segments[index].stationIds.last)).snapshot;
+    return snapshot == null ? null
+      : transferConnection(plan: plan, index: index, snapshot: snapshot, catalog: catalog, now: now);
+  }
+}
 
-    for (var i = 0; i < plan.segments.length - 1; i++) {
-      final transferStationId = plan.segments[i].stationIds.last;
-      final station = catalog.stationById(transferStationId);
-      if (station == null) continue;
+class _TransferNote extends StatelessWidget {
+  const _TransferNote({required this.connection, required this.station});
+  final TransferConnection connection;
+  final Station station;
 
-      final arrivalsState = ref.watch(arrivalsProvider(transferStationId));
-      final snapshot = arrivalsState.snapshot;
-      if (snapshot == null) continue;
-
-      // Find arrivals for current and next line
-      final currentLineId = plan.segments[i].lineId;
-      final nextLineId = plan.segments[i + 1].lineId;
-
-      final currentArrivals = snapshot.directions
-          .where((d) => d.lineId == currentLineId)
-          .expand((d) => d.validRuns(now))
-          .toList();
-      final nextArrivals = snapshot.directions
-          .where((d) => d.lineId == nextLineId)
-          .expand((d) => d.validRuns(now))
-          .toList();
-
-      if (currentArrivals.isEmpty || nextArrivals.isEmpty) continue;
-
-      currentArrivals.sort((a, b) => TimeUtils.remaining(a.intimeStr, now, intimeDura: a.intimeDura)!
-          .compareTo(TimeUtils.remaining(b.intimeStr, now, intimeDura: b.intimeDura)!));
-      nextArrivals.sort((a, b) => TimeUtils.remaining(a.intimeStr, now, intimeDura: a.intimeDura)!
-          .compareTo(TimeUtils.remaining(b.intimeStr, now, intimeDura: b.intimeDura)!));
-
-      final firstCurrent = currentArrivals.first;
-      final firstNext = nextArrivals.first;
-
-      final currentRemaining = TimeUtils.remaining(firstCurrent.intimeStr, now, intimeDura: firstCurrent.intimeDura)!;
-      final nextRemaining = TimeUtils.remaining(firstNext.intimeStr, now, intimeDura: firstNext.intimeDura)!;
-
-      final gap = nextRemaining.inMinutes - currentRemaining.inMinutes;
-      if (gap > 0 && gap < 5) {
-        warnings.add('${station.name}换乘仅剩 $gap 分钟，请加快步伐');
-      }
-    }
-
-    return warnings;
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    final colors = Theme.of(context).colorScheme;
+    final tight = connection.tight;
+    final minutes = connection.gap.inMinutes;
+    final gap = minutes < 1 ? '不足 1 分钟' : '$minutes 分钟';
+    final foreground = tight ? colors.onTertiaryContainer : colors.onSurfaceVariant;
+    final schedule = '${connection.fromLine}号线 ${connection.arrive.intimeStr} 到，'
+      '${connection.toLine}号线 ${connection.depart.outTimeStr} 开';
+    return Semantics(
+      label: '${station.name}换乘${tight ? '紧张' : ''}，间隔$gap，$schedule，按时刻表推算',
+      child: ExcludeSemantics(child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: tight ? colors.tertiaryContainer : colors.surfaceContainerHigh,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Icon(tight ? Icons.directions_run : Icons.transfer_within_a_station, size: 20, color: foreground),
+          const SizedBox(width: 10),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(tight ? '${station.name}换乘仅 $gap' : '${station.name}换乘约 $gap',
+              style: text.labelLarge?.copyWith(color: foreground)),
+            const SizedBox(height: 2),
+            Text('$schedule · 按时刻表推算',
+              style: text.bodySmall?.copyWith(color: foreground, fontFeatures: const [FontFeature.tabularFigures()])),
+          ])),
+        ]),
+      )),
+    );
   }
 }

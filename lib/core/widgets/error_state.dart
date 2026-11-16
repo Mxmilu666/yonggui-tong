@@ -10,23 +10,30 @@ class ErrorState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    return Container(
-      padding: EdgeInsets.all(compact ? 12 : 24),
-      decoration: BoxDecoration(color: colors.errorContainer, borderRadius: BorderRadius.circular(16)),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(children: [
-            Icon(Icons.cloud_off_outlined, color: colors.onErrorContainer),
-            const SizedBox(width: 8),
-            Expanded(child: Text('暂时无法更新', style: TextStyle(color: colors.onErrorContainer, fontWeight: FontWeight.w700))),
-          ]),
-          const SizedBox(height: 8),
-          Text(message, style: TextStyle(color: colors.onErrorContainer)),
-          const SizedBox(height: 8),
-          TextButton.icon(onPressed: onRetry, icon: const Icon(Icons.refresh), label: const Text('重试')),
-        ],
+    final text = Theme.of(context).textTheme;
+    return Card.filled(
+      color: colors.errorContainer,
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(16, compact ? 12 : 16, 8, compact ? 4 : 8),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Icon(Icons.cloud_off_outlined, size: 20, color: colors.onErrorContainer),
+          ),
+          const SizedBox(width: 12),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('暂时无法更新', style: text.titleSmall?.copyWith(color: colors.onErrorContainer)),
+            const SizedBox(height: 4),
+            Text(message, style: text.bodySmall?.copyWith(color: colors.onErrorContainer)),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                style: TextButton.styleFrom(foregroundColor: colors.onErrorContainer),
+                onPressed: onRetry, child: const Text('重试'),
+              ),
+            ),
+          ])),
+        ]),
       ),
     );
   }
