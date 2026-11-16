@@ -3,7 +3,7 @@
        Keep in sync with android/app/src/main/res/drawable/ic_yonggui_foreground.xml;
        regenerate PNGs with tool/render_icons.sh. -->
   <rect id="bg" width="108" height="108" fill="#0B6E8F"/>
-  <g fill="none" stroke-linecap="round" stroke-linejoin="round" transform="translate(54 54.75) scale(1.08) translate(-54 -54.75)">
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round" transform="translate(54 54.75) scale(0.86) translate(-54 -54.75)">
     <circle cx="54" cy="31" r="5" stroke="#FFC94A" stroke-width="5.5"/>
     <path d="M38 64V44H70V74Q70 81 63 81M38 64Q38 74 33 79" stroke="#FFFFFF" stroke-width="6"/>
     <path d="M38 56H70M38 67H70" stroke="#FFFFFF" stroke-width="4.5"/>
