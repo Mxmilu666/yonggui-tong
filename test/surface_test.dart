@@ -141,6 +141,25 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('到站页的收藏车站直接显示各方向下一班', (tester) async {
+    tester.view.physicalSize = const Size(320, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final gulou = catalog.search('鼓楼').single;
+    await preferences.setStringList('metro.favorites.v1', ['${gulou.id}']);
+    snapshot = ArrivalSnapshot(stationId: gulou.id, fetchedAt: now, directions: [
+      ArrivalDirection(lineId: 1, flag: 1, stationId: gulou.id, observedAt: now, runs: [
+        const ArrivalRun(sequence: 1, intimeStr: '01:31:00', outTimeStr: '01:31:30', intimeDura: 1),
+      ]),
+    ]);
+    await tester.pumpWidget(scope(MaterialApp(home: const ArrivalsPage())));
+    await tester.pumpAndSettle();
+    expect(find.text('往 霞浦'), findsOneWidget);
+    expect(find.text('01:31'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('点击首页收藏路线卡片，按起终点打开行程估算', (tester) async {
     tester.view.physicalSize = const Size(320, 900);
     tester.view.devicePixelRatio = 1;

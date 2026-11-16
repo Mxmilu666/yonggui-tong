@@ -17,7 +17,7 @@ void main() {
   final now = DateTime.utc(2026, 11, 16); // 08:00 Beijing
   DateTime beijing(int h, int m, int s) => DateTime.utc(2026, 11, 16, h - 8, m, s);
 
-  ArrivalSnapshot station(int id, List<(int line, int flag, List<String> outTimes)> directions) =>
+  ArrivalSnapshot station(int id, List<(int line, int flag, List<String> times)> directions) =>
     ArrivalSnapshot(stationId: id, fetchedAt: now, directions: [
       for (final (line, flag, times) in directions) ArrivalDirection(lineId: line, flag: flag,
         stationId: id, observedAt: now, runs: [
@@ -40,23 +40,41 @@ void main() {
     plan = RoutePlanner(network, catalog).estimate(origin, catalog.search('城隍庙').single.id)!;
   });
 
-  test('从起点下一班出发，换乘取到站后的首班同向列车', () {
+  test('到站对齐换乘站同向来车，接续取之后首班同向去车', () {
     final timing = journeyTiming(plan: plan, catalog: catalog, now: now, snapshots: {
       origin: station(origin, [(1, 1, ['08:01:40']), (1, 2, ['08:02:40'])]),
-      gulou: station(gulou, [(2, 1, ['08:05:00']), (2, 2, ['08:07:00', '08:04:00'])]),
+      gulou: station(gulou, [
+        (1, 1, ['08:04:30']),
+        (1, 2, ['08:00:30', '08:05:10']), // the train boarded at 08:02:40, estimated 08:04:40
+        (2, 1, ['08:05:30']),
+        (2, 2, ['08:07:00', '08:04:00']),
+      ]),
     })!;
 
-    expect(timing.board!.at, beijing(8, 2, 40));
+    expect(timing.board, beijing(8, 2, 40));
     final transfer = timing.transfers.single;
-    expect(transfer.arriveAt, beijing(8, 4, 40)); // board + 1 stop x 2 min
-    expect(transfer.status, TransferStatus.connected);
-    expect(transfer.depart!.at, beijing(8, 7, 0));
-    expect(transfer.gap, const Duration(minutes: 2, seconds: 20));
-    expect(transfer.tight, isTrue);
+    expect(transfer.arriveAt, beijing(8, 5, 10));
+    expect(transfer.depart, (at: beijing(8, 7, 0), projected: false));
+    expect(transfer.hurry, Hurry.risky); // 1 min 50 s
+    // The listed 3-minute headway gives the fallback train.
+    expect(transfer.nextDepart, (at: beijing(8, 10, 0), projected: true));
     expect(timing.arriveAt, beijing(8, 9, 0));
   });
 
-  test('估算到站晚于换乘站已公布的班次时不外推、不给到达时间', () {
+  test('估算到站晚于已公布班次时按发车间隔推算出要不要赶', () {
+    final timing = journeyTiming(plan: plan, catalog: catalog, now: now, snapshots: {
+      origin: station(origin, [(1, 2, ['08:02:40'])]),
+      gulou: station(gulou, [(2, 2, ['08:01:00', '08:04:00'])]),
+    })!;
+
+    final transfer = timing.transfers.single;
+    expect(transfer.arriveAt, beijing(8, 4, 40)); // no incoming times listed: ride estimate
+    expect(transfer.depart, (at: beijing(8, 7, 0), projected: true));
+    expect(transfer.hurry, Hurry.hurry);
+    expect(timing.hurry, Hurry.hurry);
+  });
+
+  test('只有一班可参照时不外推', () {
     final timing = journeyTiming(plan: plan, catalog: catalog, now: now, snapshots: {
       origin: station(origin, [(1, 2, ['08:02:40'])]),
       gulou: station(gulou, [(2, 2, ['08:03:00'])]),

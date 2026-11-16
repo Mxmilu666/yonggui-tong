@@ -13,6 +13,7 @@ import '../../core/widgets/error_state.dart';
 import '../../core/widgets/line_badge.dart';
 import '../../data/providers.dart';
 import '../search/station_search.dart';
+import 'station_arrival_card.dart';
 
 class ArrivalsPage extends ConsumerWidget {
   const ArrivalsPage({super.key, this.stationId});
@@ -122,22 +123,10 @@ class _StationPicker extends ConsumerWidget {
           child: Text('收藏车站', style: Theme.of(context).textTheme.titleSmall
             ?.copyWith(color: Theme.of(context).colorScheme.primary)),
         ),
-        Card.outlined(child: Column(children: [
-          for (final (index, station) in stations.indexed) ...[
-            if (index > 0) const Divider(indent: 16, endIndent: 16),
-            ListTile(
-              title: Text(station.name),
-              subtitle: Padding(
-                padding: const EdgeInsets.only(top: 6),
-                child: Wrap(spacing: 6, runSpacing: 6, children: [
-                  for (final line in station.lineIds) LineBadge(lineId: line, small: true),
-                ]),
-              ),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => context.go('/arrivals/${station.id}'),
-            ),
-          ],
-        ])),
+        for (final (index, station) in stations.indexed) ...[
+          if (index > 0) const SizedBox(height: 12),
+          StationArrivalCard(station: station),
+        ],
       ],
     ]);
   }
