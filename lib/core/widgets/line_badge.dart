@@ -13,15 +13,16 @@ class LineBadge extends StatelessWidget {
     label: '$lineId号线',
     child: ExcludeSemantics(
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: small ? 8 : 10, vertical: 5),
+        padding: EdgeInsets.symmetric(horizontal: small ? 10 : 12, vertical: small ? 6 : 7),
         decoration: BoxDecoration(
           color: LineColors.colorOf(lineId),
-          borderRadius: BorderRadius.circular(9),
+          borderRadius: BorderRadius.circular(small ? 10 : 12),
+          boxShadow: [BoxShadow(color: LineColors.colorOf(lineId).withAlpha(60),
+            blurRadius: 4, offset: const Offset(0, 2))],
         ),
-        child: Text(
-          '$lineId号线',
+        child: Text('$lineId号线',
           style: (small ? Theme.of(context).textTheme.labelSmall : Theme.of(context).textTheme.labelMedium)
-              ?.copyWith(color: LineColors.onColorOf(lineId), fontWeight: FontWeight.w700),
+              ?.copyWith(color: LineColors.onColorOf(lineId), fontWeight: FontWeight.w700, height: 1.2),
         ),
       ),
     ),
