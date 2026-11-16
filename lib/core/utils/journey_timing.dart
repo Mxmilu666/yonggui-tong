@@ -32,11 +32,14 @@ enum TransferStatus {
 /// How much slack a connection leaves.
 enum Hurry {
   /// At least 5 minutes between arrival and the onward departure.
-  relaxed,
+  relaxed('不用赶'),
   /// 2 to 5 minutes.
-  hurry,
+  hurry('需要赶'),
   /// Under 2 minutes.
-  risky,
+  risky('可能赶不上');
+
+  const Hurry(this.label);
+  final String label;
 }
 
 class TransferTiming {

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="live_accent">#FF0B6E8F</color>
+    <string name="live_channel">乘车实时更新</string>
+    <string name="live_channel_description">等车倒计时和行程进度，显示在状态栏胶囊（灵动岛）</string>
+    <string name="live_stop">结束</string>
+</resources>

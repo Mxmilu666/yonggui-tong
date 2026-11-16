@@ -14,6 +14,8 @@ import '../../core/widgets/line_badge.dart';
 import '../../data/providers.dart';
 import '../search/station_search.dart';
 import 'station_arrival_card.dart';
+import '../../core/utils/live_stages.dart';
+import '../../data/live_trip.dart';
 
 class ArrivalsPage extends ConsumerWidget {
   const ArrivalsPage({super.key, this.stationId});
@@ -258,11 +260,19 @@ class _DirectionSection extends StatelessWidget {
     final next = runs.isEmpty ? null : runs.first;
     final remaining = next == null ? null
       : TimeUtils.remaining(next.intimeStr, now, intimeDura: next.intimeDura);
+    final label = DirectionResolver.label(lineId: direction.lineId, flag: direction.flag, catalog: catalog);
+    final station = catalog?.stationById(direction.stationId);
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
-        Expanded(child: Text(
-          DirectionResolver.label(lineId: direction.lineId, flag: direction.flag, catalog: catalog),
-          style: compact ? text.titleSmall : text.titleMedium)),
+        Expanded(child: Text(label, style: compact ? text.titleSmall : text.titleMedium)),
+        if (!compact && next != null && remaining != null && station != null && LiveTrip.available) IconButton(
+          tooltip: '等这班车（状态栏倒计时）',
+          visualDensity: VisualDensity.compact,
+          icon: const Icon(Icons.notifications_active_outlined),
+          onPressed: () => LiveTrip.start(context, waitForTrain(
+            station: station, lineId: direction.lineId, direction: label, run: next,
+            arriveAt: now.add(remaining), now: now)),
+        ),
         if (remaining != null) CountdownText(remaining: remaining, large: !compact),
       ]),
       const SizedBox(height: 2),

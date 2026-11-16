@@ -8,6 +8,8 @@ import '../../core/utils/direction_resolver.dart';
 import '../../core/utils/journey_timing.dart';
 import '../../core/utils/time_utils.dart';
 import '../../data/providers.dart';
+import '../../core/utils/live_stages.dart';
+import '../../data/live_trip.dart';
 
 const _tabular = [FontFeature.tabularFigures()];
 
@@ -65,6 +67,20 @@ class JourneyTimingPanel extends ConsumerWidget {
         const SizedBox(height: 8),
         Text('始发班次取自车站时刻表；乘车按每站约 2 分钟估算并对齐换乘站到站时刻，接口未公布的后续班次按当前发车间隔推算，不含步行与延误。',
           style: Theme.of(context).textTheme.labelSmall?.copyWith(color: muted)),
+        if (LiveTrip.available && timing.status == BoardStatus.boarded) ...[
+          const SizedBox(height: 12),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: FilledButton.tonalIcon(
+              icon: const Icon(Icons.directions_subway_outlined),
+              label: const Text('开始行程（状态栏实时更新）'),
+              onPressed: () {
+                final trip = journeyTrip(plan: plan, timing: timing, catalog: catalog, now: now);
+                if (trip != null) LiveTrip.start(context, trip);
+              },
+            ),
+          ),
+        ],
       ]),
     );
   }
@@ -117,9 +133,9 @@ class _TransferVerdict extends StatelessWidget {
       TransferStatus.beyondSchedule => (Icons.schedule, null, arrive,
         '$station时刻表只公布到 ${TimeUtils.formatBeijing(transfer.lastKnown!)}，暂时无法判断，临近时自动更新'),
       TransferStatus.connected => switch (hurry!) {
-        Hurry.relaxed => (Icons.check_circle_outline, '不用赶', '$station换乘可等$slack', ''),
-        Hurry.hurry => (Icons.directions_run, '需要赶', '$station换乘只有$slack', ''),
-        Hurry.risky => (Icons.warning_amber_rounded, '可能赶不上', '$station换乘只有$slack', ''),
+        Hurry.relaxed => (Icons.check_circle_outline, Hurry.relaxed.label, '$station换乘可等$slack', ''),
+        Hurry.hurry => (Icons.directions_run, Hurry.hurry.label, '$station换乘只有$slack', ''),
+        Hurry.risky => (Icons.warning_amber_rounded, Hurry.risky.label, '$station换乘只有$slack', ''),
       },
     };
     final schedule = transfer.depart == null ? detail

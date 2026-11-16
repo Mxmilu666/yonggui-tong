@@ -1,5 +1,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <!-- Android 16 Live Updates: status-bar chip for a trip the user started. -->
+    <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS"/>
+    <!-- Keeps a user-started trip in the foreground so its stages switch on time; ends at arrival. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE"/>
     <application
         android:label="甬轨通"
         android:name="${applicationName}"
@@ -25,6 +31,13 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <!-- In-app links (widget, live trip notification). Release builds of Flutter only route
+                 deep links that match a declared filter. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data android:scheme="yonggui" android:host="app"/>
+            </intent-filter>
         </activity>
         <receiver
             android:name=".widget.ArrivalsWidgetProvider"
@@ -37,6 +50,17 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/arrivals_widget_info" />
         </receiver>
+        <receiver
+            android:name=".live.LiveTripReceiver"
+            android:exported="false" />
+        <service
+            android:name=".live.LiveTripService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Live Update for a transit trip the user started: next-train countdown and transfer steps until arrival" />
+        </service>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

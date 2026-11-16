@@ -9,6 +9,7 @@ import 'package:yonggui_tong/core/models/station.dart';
 import 'package:yonggui_tong/core/utils/journey_timing.dart';
 import 'package:yonggui_tong/core/utils/station_resolver.dart';
 import 'package:yonggui_tong/features/planner/route_planner.dart';
+import 'package:yonggui_tong/core/utils/live_stages.dart';
 
 void main() {
   late StationCatalog catalog;
@@ -85,5 +86,36 @@ void main() {
     expect(transfer.lastKnown, beijing(8, 3, 0));
     expect(transfer.depart, isNull);
     expect(timing.arriveAt, isNull);
+  });
+
+  test('行程实时更新按上车、乘车、换乘、到达切换，换乘阶段倒计时到接续发车', () {
+    final timing = journeyTiming(plan: plan, catalog: catalog, now: now, snapshots: {
+      origin: station(origin, [(1, 2, ['08:02:40'])]),
+      gulou: station(gulou, [(1, 2, ['08:05:10']), (2, 2, ['08:04:00', '08:07:00'])]),
+    })!;
+
+    final trip = journeyTrip(plan: plan, timing: timing, catalog: catalog, now: now)!;
+
+    expect([for (final s in trip.stages) (s.at, s.title, s.countdownTo)], [
+      (now, '东门口（天一广场） → 城隍庙', beijing(8, 2, 40)),
+      (beijing(8, 2, 40), '乘坐 1号线 往 高桥西', beijing(8, 5, 10)),
+      (beijing(8, 5, 10), '鼓楼换乘 · 可能赶不上', beijing(8, 7, 0)),
+      (beijing(8, 7, 0), '乘坐 2号线 往 栎社国际机场', beijing(8, 9, 0)),
+    ]);
+    expect(trip.stages[2].text, '2号线 往 栎社国际机场 08:07:00 开，错过则下一班 约 08:10');
+    expect(trip.endsAt, beijing(8, 11, 0));
+  });
+
+  test('换乘班次推算不出时，行程在换乘站停下并提示看站台', () {
+    final timing = journeyTiming(plan: plan, catalog: catalog, now: now, snapshots: {
+      origin: station(origin, [(1, 2, ['08:02:40'])]),
+      gulou: station(gulou, [(2, 2, ['08:03:00'])]),
+    })!;
+
+    final trip = journeyTrip(plan: plan, timing: timing, catalog: catalog, now: now)!;
+
+    expect(trip.stages.last.title, '鼓楼换乘');
+    expect(trip.stages.last.countdownTo, isNull);
+    expect(trip.endsAt, beijing(8, 34, 40)); // estimated arrival 08:04:40 + 30 min
   });
 }
