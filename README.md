@@ -40,7 +40,7 @@
 
 ## 安装
 
-**Android**：到本仓库的 Releases 页面下载最新的 `yonggui-tong-vX.Y.Z.apk`，在手机上打开安装即可。
+**Android**：到本仓库的 Releases 页面下载最新版本，在手机上打开安装即可。绝大多数手机下载 `…-arm64-v8a.apk`；很老的 32 位手机用 `…-armeabi-v7a.apk`；不确定就下 `…-universal.apk`（体积最大，所有手机都能装）。
 
 **自己编译**（Android / iOS）：安装 [Flutter](https://docs.flutter.dev/get-started/install)（stable）后，连接手机或打开模拟器，在项目目录运行
 

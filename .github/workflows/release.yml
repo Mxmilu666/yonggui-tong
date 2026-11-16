@@ -44,9 +44,21 @@ jobs:
           keyPassword=$KEY_PASSWORD
           EOF
 
+      # One universal APK for anyone unsure, plus smaller per-ABI APKs (same versionCode).
       - run: flutter build apk --release
-      - run: cp build/app/outputs/flutter-apk/app-release.apk "yonggui-tong-${GITHUB_REF_NAME}.apk"
+      - run: flutter build apk --release --split-per-abi
+      - name: Name release assets
+        run: |
+          out=build/app/outputs/flutter-apk
+          mkdir dist
+          cp "$out/app-release.apk" "dist/yonggui-tong-${GITHUB_REF_NAME}-universal.apk"
+          for abi in arm64-v8a armeabi-v7a x86_64; do
+            cp "$out/app-$abi-release.apk" "dist/yonggui-tong-${GITHUB_REF_NAME}-$abi.apk"
+          done
       - uses: softprops/action-gh-release@v2
         with:
-          files: yonggui-tong-${{ github.ref_name }}.apk
+          files: dist/*.apk
           generate_release_notes: true
+          body: |
+            **该下哪个？** 绝大多数手机选 `arm64-v8a`；很老的 32 位手机选 `armeabi-v7a`；`x86_64` 用于模拟器和少数平板；不确定就下 `universal`（包含全部架构，体积最大）。
+            几个安装包版本号相同，可以互相覆盖安装，也都能直接升级上一个版本。
