@@ -43,7 +43,7 @@ class FavoriteRouteCard extends ConsumerWidget {
       elevation: 2,
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: () => context.push('/planner?origin=${route.originId}&destination=${route.destinationId}'),
+        onTap: () => context.push('/planner?from=${route.originId}&to=${route.destinationId}'),
         child: Container(
           decoration: BoxDecoration(
             border: Border(left: BorderSide(width: 6, color: colors.primary)),

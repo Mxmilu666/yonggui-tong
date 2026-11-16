@@ -54,7 +54,6 @@ final favoriteRoutesProvider = NotifierProvider<FavoriteRoutesNotifier, List<Fav
 class FavoriteRoutesNotifier extends Notifier<List<FavoriteRoute>> {
   @override
   List<FavoriteRoute> build() => FavoritesRepository(ref.watch(preferencesProvider)).loadRoutes();
-
   Future<void> toggle(FavoriteRoute route) async {
     final prefs = ref.read(preferencesProvider);
     await FavoritesRepository(prefs).toggleRoute(route);
