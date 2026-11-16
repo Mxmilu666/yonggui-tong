@@ -128,7 +128,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             ListTile(
               leading: const Icon(Icons.info_outline_rounded),
               title: const Text('关于甬轨通'),
-              subtitle: const Text('版本 1.0.0 · 数据来源与免责声明'),
+              subtitle: const Text('版本 1.0.0'),
               trailing: const Icon(Icons.chevron_right),
               onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const AboutPage())),
             ),
@@ -160,40 +160,28 @@ class AboutPage extends StatelessWidget {
     body: Center(child: ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 720),
       child: ListView(padding: const EdgeInsets.all(24), children: [
-        Icon(Icons.route_rounded, size: 56, color: Theme.of(context).colorScheme.primary),
+        Center(child: Image.asset('assets/brand.png', width: 72, height: 72, semanticLabel: '甬轨通图标')),
         const SizedBox(height: 16),
         Text('甬轨通', textAlign: TextAlign.center, style: Theme.of(context).textTheme.headlineMedium),
         const SizedBox(height: 8),
         const Text('宁波地铁出行助手 · 1.0.0', textAlign: TextAlign.center),
         const SizedBox(height: 32),
-        const _AboutSection(title: '独立出行工具', body: '甬轨通是非官方应用，与宁波轨道交通运营方无隶属或合作关系。应用标识为独立设计的抽象轨道图形，不是官方标识。'),
-        const _AboutSection(title: '真实数据来源', body: '车站目录、站点 ID 与到站时刻来自宁波地铁官方 Android App 后端的未公开接口。接口主机：https://metroinfo.ditiego.net。无需账号，不提供支付服务。'),
-        const _AboutSection(title: '时刻与方向说明', body: '到站时刻按运行图提供，统一为北京时间（UTC+8），不保证反映实时延误。倒计时由接口到站时刻计算；无效与占位班次不会作为列车展示。方向采用2026-11-16核对的官方站点资料，按线路号和方向编号匹配终点，终点名称取当前车站目录；仅供参考，不代表每班列车实际终到，短线列车请以站台显示为准。无法确认时明确提示终点待确认。暂无有效班次不能据此判断线路已停运。'),
-        const _AboutSection(title: '线网与行程估算', body: '线网图为示意图，不按地理比例绘制。行程时长为相邻站 2 分钟、换乘 4 分钟的本地估算，不含候车、步行及延误，不是实际列车运行时长。本应用不提供未经接口证实的票价、出入口、设施或首末班信息。'),
-        const _AboutSection(title: '使用提示', body: '未公开接口可能变化或暂时不可用。到站与估算信息仅供参考，请以车站公告、现场显示及运营方发布为准。收藏与偏好设置仅保存在本机；清除目录缓存不会移除收藏。'),
-        const _AboutSection(title: '接口文档', body: '仓库文档路径：\ndocs/ningbo-metro-arrival-api.md\n\n来源说明：com.nbmetro.smartmetro v5.3.14；接口文档实测日期 2026-11-16。'),
-        const SizedBox(height: 16),
-        OutlinedButton.icon(
-          onPressed: () => showLicensePage(context: context,
-            applicationName: '甬轨通', applicationVersion: '1.0.0'),
-          icon: const Icon(Icons.description_outlined), label: const Text('开源许可')),
+        Card.outlined(child: Column(children: [
+          const ListTile(
+            leading: Icon(Icons.dataset_outlined),
+            title: Text('数据来源'),
+            subtitle: Text('数据来自宁波地铁官方'),
+          ),
+          const Divider(indent: 16, endIndent: 16),
+          ListTile(
+            leading: const Icon(Icons.description_outlined),
+            title: const Text('开源许可'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => showLicensePage(context: context,
+              applicationName: '甬轨通', applicationVersion: '1.0.0'),
+          ),
+        ])),
       ]),
     )),
-  );
-}
-
-class _AboutSection extends StatelessWidget {
-  const _AboutSection({required this.title, required this.body});
-  final String title;
-  final String body;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(bottom: 24),
-    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(title, style: Theme.of(context).textTheme.titleMedium),
-      const SizedBox(height: 8),
-      SelectableText(body, style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.7)),
-    ]),
   );
 }

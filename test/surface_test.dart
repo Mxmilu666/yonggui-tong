@@ -186,7 +186,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('about source disclaimer is scrollable at 320dp with large text', (tester) async {
+  testWidgets('about page names the data source and fits 320dp with large text', (tester) async {
     tester.view.physicalSize = const Size(320, 640);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -195,8 +195,7 @@ void main() {
       data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(1.4)), child: child!), home: const AboutPage()));
     await tester.pumpAndSettle();
     expect(find.text('宁波地铁出行助手 · 1.0.0'), findsOneWidget);
-    await tester.scrollUntilVisible(find.text('接口文档'), 300, scrollable: find.byType(Scrollable).first);
-    expect(find.textContaining('docs/ningbo-metro-arrival-api.md'), findsOneWidget);
+    expect(find.text('数据来自宁波地铁官方'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

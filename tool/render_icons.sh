@@ -37,6 +37,7 @@ for pair in 20x20@1x:20 20x20@2x:40 20x20@3x:60 29x29@1x:29 29x29@2x:58 29x29@3x
   render square.svg "$ios/Icon-App-${pair%%:*}.png" "${pair##*:}" opaque
 done
 
+render rounded.svg "$root/assets/brand.png" 288
 render rounded.svg "$root/web/favicon.png" 48
 render rounded.svg "$root/web/icons/Icon-192.png" 192
 render rounded.svg "$root/web/icons/Icon-512.png" 512
