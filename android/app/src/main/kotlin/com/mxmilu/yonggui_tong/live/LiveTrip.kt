@@ -45,7 +45,8 @@ object LiveTrip {
     private const val FOCUS_STOP = "miui.focus.action_stop"
     const val EXTRA_FOCUS_ALLOWED = "focusAllowed"
 
-    private data class Stage(val at: Long, val title: String, val text: String, val chip: String, val countdownTo: Long?)
+    private data class Stage(val at: Long, val title: String, val text: String, val chip: String,
+        val stationName: String, val countdownTo: Long?, val countdownInChip: Boolean)
 
     /**
      * The notification for a moment. [nextAt] is when it must be rebuilt: the next stage, the end,
@@ -104,7 +105,9 @@ object LiveTrip {
             (0 until array.length()).map {
                 val stage = array.getJSONObject(it)
                 Stage(stage.getLong("at"), stage.getString("title"), stage.getString("text"), stage.getString("chip"),
-                    if (stage.isNull("countdownTo")) null else stage.getLong("countdownTo"))
+                    stage.getString("stationName"),
+                    if (stage.isNull("countdownTo")) null else stage.getLong("countdownTo"),
+                    stage.getBoolean("countdownInChip"))
             }.sortedBy { it.at }
         }
         private val stopTitle = context.getString(R.string.live_stop)
@@ -159,7 +162,8 @@ object LiveTrip {
             } else {
                 builder.setShowWhen(false).setUsesChronometer(false)
             }
-            val chip = countdownTo?.let { countdown(it - now) } ?: current.chip
+            val chipTarget = countdownTo?.takeIf { current.countdownInChip }
+            val chip = chipTarget?.let { countdown(it - now) } ?: current.chip
             // Some Android builds merge old notification extras over Builder extras on reuse.
             // Write live fields after build() so each posted notification contains this tick.
             val notification = builder.build()
@@ -167,13 +171,13 @@ object LiveTrip {
             notification.extras.putString(EXTRA_SHORT_CRITICAL_TEXT, chip)
             if (focus) {
                 // Only rebuild the template on a stage/target change, not on every second tick.
-                if (stageChanged || cachedFocusParam == null || focusTarget != countdownTo) {
-                    cachedFocusParam = focusParam(current, countdownTo, now, stageChanged, stopTitle)
-                    focusTarget = countdownTo
+                if (stageChanged || cachedFocusParam == null || focusTarget != chipTarget) {
+                    cachedFocusParam = focusParam(current, chipTarget, now, stageChanged, stopTitle)
+                    focusTarget = chipTarget
                 }
                 val param = cachedFocusParam!!.getJSONObject("param_v2")
                 param.put("enableFloat", stageChanged)
-                if (countdownTo != null) {
+                if (chipTarget != null) {
                     val digits = param.getJSONObject("param_island").getJSONObject("bigIslandArea")
                         .getJSONObject("sameWidthDigitInfo")
                     digits.put("digit", chip)
@@ -188,7 +192,7 @@ object LiveTrip {
             // Even the final stage must clear its system timer at the target, before the trip ends.
             if (countdownTo != null) nextAt = minOf(nextAt, countdownTo)
             // Keep text moving even when focus is allowed but System UI ignores the native timer.
-            if (countdownTo != null) nextAt = minOf(nextAt, now + (countdownTo - now - 1) % 1000 + 1)
+            if (chipTarget != null) nextAt = minOf(nextAt, now + (chipTarget - now - 1) % 1000 + 1)
             return Frame(notification, nextAt, current.at)
         }
     }
@@ -202,16 +206,18 @@ object LiveTrip {
         return if (h > 0) "%d:%02d:%02d".format(h, m, s) else "%02d:%02d".format(m, s)
     }
 
-    /** HyperOS focus notification / island: icon in the small island, label and timer in the big one. */
+    /** Native big-island summary: station on the left, timer or persistent status on the right. */
     private fun focusParam(stage: Stage, countdownTo: Long?, now: Long, popUp: Boolean, stopTitle: String): JSONObject {
         val pic = JSONObject().put("type", 1).put("pic", FOCUS_PIC)
         val left = JSONObject().put("type", 1).put("picInfo", pic)
-            .put("textInfo", JSONObject().put("title", stage.chip))
+            .put("textInfo", JSONObject().put("title", stage.stationName))
         val big = JSONObject().put("imageTextInfoLeft", left)
         if (countdownTo != null) {
             big.put("sameWidthDigitInfo", JSONObject().put("showHighlightColor", true).put("timerInfo", JSONObject()
                 .put("timerType", -1).put("timerWhen", countdownTo)
                 .put("timerTotal", countdownTo - stage.at).put("timerSystemCurrent", now)))
+        } else {
+            big.put("textInfo", JSONObject().put("title", stage.chip))
         }
         val island = JSONObject().put("islandProperty", 1).put("islandPriority", 2)
             .put("bigIslandArea", big)

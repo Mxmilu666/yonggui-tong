@@ -72,12 +72,16 @@ jobs:
           target: google_apis
           disable-animations: true
           script: tool/smoke_test_apk.sh dist/yonggui-tong-${{ github.ref_name }}-x86_64.apk
+      - name: Prepare release notes
+        run: |
+          git for-each-ref --format='%(contents)' "refs/tags/$GITHUB_REF_NAME" > "$RUNNER_TEMP/release-notes.md"
+          cat >> "$RUNNER_TEMP/release-notes.md" <<'EOF'
+
+          **该下哪个？** 绝大多数手机选 `arm64-v8a`；很老的 32 位手机选 `armeabi-v7a`；`x86_64` 用于模拟器和少数平板；不确定就下 `universal`（包含全部架构，体积最大）。
+          几个安装包版本号相同，可以互相覆盖安装，也都能直接升级上一个版本。
+          EOF
       - uses: softprops/action-gh-release@v2
         with:
           files: dist/*.apk
           generate_release_notes: true
-          body: |
-            **更新内容**：[查看本版说明](https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/README.md#版本更新)。
-
-            **该下哪个？** 绝大多数手机选 `arm64-v8a`；很老的 32 位手机选 `armeabi-v7a`；`x86_64` 用于模拟器和少数平板；不确定就下 `universal`（包含全部架构，体积最大）。
-            几个安装包版本号相同，可以互相覆盖安装，也都能直接升级上一个版本。
+          body_path: ${{ runner.temp }}/release-notes.md

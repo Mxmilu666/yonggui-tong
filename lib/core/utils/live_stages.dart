@@ -5,16 +5,18 @@ import 'direction_resolver.dart';
 import 'journey_timing.dart';
 import 'time_utils.dart';
 
-/// One state of a live trip; shown from [at] until the next stage. The status-bar chip / island
-/// counts down to [countdownTo] while it is ahead, and shows [chip] otherwise.
+/// One state of a live trip. [stationName] labels the platform or upcoming stop on the island.
+/// [countdownInChip] keeps a status such as "停靠中" visible while the notification still counts down.
 class LiveStage {
   const LiveStage({required this.at, required this.title, required this.text, required this.chip,
-    this.countdownTo});
+    required this.stationName, this.countdownTo, this.countdownInChip = true});
 
   final DateTime at;
   final String title;
   final String text;
   final String chip;
+  final String stationName;
+  final bool countdownInChip;
   final DateTime? countdownTo;
 
   Map<String, Object?> toJson() => {
@@ -22,6 +24,8 @@ class LiveStage {
     'title': title,
     'text': text,
     'chip': chip,
+    'stationName': stationName,
+    'countdownInChip': countdownInChip,
     'countdownTo': countdownTo?.millisecondsSinceEpoch,
   };
 }
@@ -57,9 +61,10 @@ LiveTripPlan waitForTrain({required Station station, required int lineId, requir
     stages: [
       if (now.isBefore(scheduled.arriveAt))
         LiveStage(at: now, title: title, text: '${run.intimeStr} 到站 · 第${run.sequence}班 · 按时刻表',
-          chip: '进站', countdownTo: scheduled.arriveAt),
+          stationName: station.name, chip: '进站', countdownTo: scheduled.arriveAt),
       LiveStage(at: scheduled.arriveAt, title: title,
-        text: '停靠中 · ${run.outTimeStr} 发车 · 按时刻表', chip: '停靠', countdownTo: scheduled.departAt),
+        stationName: station.name, text: '停靠中 · ${run.outTimeStr} 发车 · 按时刻表',
+        chip: '停靠中', countdownTo: scheduled.departAt, countdownInChip: false),
     ],
   );
 }
@@ -82,6 +87,7 @@ LiveTripPlan? journeyTrip({required RoutePlan plan, required JourneyTiming timin
   final destination = name(plan.destinationId);
   final stages = <LiveStage>[
     LiveStage(at: now, title: '${name(plan.originId)} → $destination',
+      stationName: name(plan.originId),
       text: '${leg(0)} ${_clock(board)} 开 · 准备上车', chip: '上车', countdownTo: board),
   ];
   var cursor = board;
@@ -89,7 +95,8 @@ LiveTripPlan? journeyTrip({required RoutePlan plan, required JourneyTiming timin
     if (index == plan.segments.length - 1) {
       final arrival = timing.arriveAt!;
       stages.add(LiveStage(at: cursor, title: '乘坐 ${leg(index)}',
-        text: '${_about(arrival)} 到达$destination', chip: '到站', countdownTo: arrival));
+        stationName: destination, text: '${_about(arrival)} 到达$destination',
+        chip: '到站', countdownTo: arrival));
       return LiveTripPlan(stages: stages, endsAt: arrival.add(const Duration(minutes: 2)),
         open: '/planner?from=${plan.originId}&to=${plan.destinationId}');
     }
@@ -101,8 +108,9 @@ LiveTripPlan? journeyTrip({required RoutePlan plan, required JourneyTiming timin
       stages
         ..add(LiveStage(at: cursor, title: '乘坐 ${leg(index)}',
           text: '${_about(transfer.arriveAt)} 到$station，换乘 ${leg(index + 1)}', chip: '换乘',
-          countdownTo: transfer.arriveAt))
+          stationName: station, countdownTo: transfer.arriveAt))
         ..add(LiveStage(at: transfer.arriveAt, title: '$station换乘',
+          stationName: station,
           text: '${leg(index + 1)} 的班次暂时推算不出，请以站台显示为准', chip: '换乘'));
       return LiveTripPlan(stages: stages, endsAt: transfer.arriveAt.add(const Duration(minutes: 30)),
         open: '/planner?from=${plan.originId}&to=${plan.destinationId}');
@@ -111,11 +119,11 @@ LiveTripPlan? journeyTrip({required RoutePlan plan, required JourneyTiming timin
     stages
       ..add(LiveStage(at: cursor, title: '乘坐 ${leg(index)}',
         text: '${_about(transfer.arriveAt)} 到$station，换乘 ${leg(index + 1)} ${_slot(depart)} 开 · ${hurry.label}',
-        chip: '换乘', countdownTo: transfer.arriveAt))
+        stationName: station, chip: '换乘', countdownTo: transfer.arriveAt))
       ..add(LiveStage(at: transfer.arriveAt, title: '$station换乘 · ${hurry.label}',
         text: '${leg(index + 1)} ${_slot(depart)} 开'
           '${hurry == Hurry.risky && next != null ? '，错过则下一班 ${_slot(next)}' : ''}',
-        chip: '换乘', countdownTo: depart.at));
+        stationName: station, chip: '换乘', countdownTo: depart.at));
     cursor = depart.at;
   }
   return null;

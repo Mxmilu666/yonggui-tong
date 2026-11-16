@@ -58,10 +58,16 @@ void main() {
     expect(waiting.stages.last.at, beijing(7, 59, 50));
     expect(waiting.stages.last.countdownTo, beijing(8, 0, 35));
     expect(waiting.endsAt, beijing(8, 0, 35));
+    expect(waiting.stages.last.chip, '停靠中');
+    expect(waiting.stages.last.countdownInChip, isFalse);
+    expect(waiting.stages.first.countdownInChip, isTrue);
+    expect(waiting.stages.map((s) => s.stationName), everyElement('东门口（天一广场）'));
     final duringDwell = waitForTrain(station: catalog.stationById(origin)!, lineId: 1, direction: '往 高桥西',
       scheduled: stop, now: now);
     expect(duringDwell.stages.single.countdownTo, stop.departAt);
     expect(duringDwell.stages.single.text, contains('停靠中'));
+    expect(duringDwell.stages.single.chip, '停靠中');
+    expect(duringDwell.stages.single.countdownInChip, isFalse);
   });
 
   test('到站对齐换乘站同向来车，接续取之后首班同向去车', () {
@@ -127,6 +133,7 @@ void main() {
     ]);
     expect(trip.stages[2].text, '2号线 往 栎社国际机场 08:07:00 开，错过则下一班 约 08:10');
     expect(trip.endsAt, beijing(8, 11, 0));
+    expect(trip.stages.map((s) => s.stationName), ['东门口（天一广场）', '鼓楼', '鼓楼', '城隍庙']);
   });
 
   test('换乘班次推算不出时，行程在换乘站停下并提示看站台', () {
@@ -140,5 +147,6 @@ void main() {
     expect(trip.stages.last.title, '鼓楼换乘');
     expect(trip.stages.last.countdownTo, isNull);
     expect(trip.endsAt, beijing(8, 34, 40)); // estimated arrival 08:04:40 + 30 min
+    expect(trip.stages.last.stationName, '鼓楼');
   });
 }

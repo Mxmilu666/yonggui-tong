@@ -16,8 +16,9 @@ class LiveTripTest {
     private val start = 1_730_000_000_000L
     private val context get() = RuntimeEnvironment.getApplication()
 
-    private fun stage(at: Long, chip: String, target: Long?) = JSONObject()
+    private fun stage(at: Long, chip: String, target: Long?, station: String = "鼓楼", countdownInChip: Boolean = true) = JSONObject()
         .put("at", at).put("title", "倒计时测试").put("text", chip).put("chip", chip)
+        .put("stationName", station).put("countdownInChip", countdownInChip)
         .put("countdownTo", target ?: JSONObject.NULL)
 
     private fun trip(focus: Boolean, end: Long, vararg stages: JSONObject) = LiveTrip.Trip(context,
@@ -67,27 +68,46 @@ class LiveTripTest {
     }
 
     @Test
-    fun arrivalSwitchesToDepartureCountdownAndEndsWithoutStaleDigits() {
+    fun arrivalShowsDwellStatusUntilDepartureInsteadOfAnotherCountdown() {
         val arrival = start + 2_500
         val departure = arrival + 3_000
-        val end = departure + 2_000
-        val trip = trip(true, end, stage(start, "等车", arrival),
-            stage(arrival, "停靠中", departure), stage(departure, "已发车", null))
-        val waiting = trip.frame(start, null)!!
-        val dwelling = trip.frame(arrival, waiting.stageAt)!!
-        assertEquals("停靠中", dwelling.notification.extras.getString(Notification.EXTRA_TEXT))
-        assertEquals("00:03", digits(dwelling).getString("digit"))
-        assertEquals(departure, digits(dwelling).getJSONObject("timerInfo").getLong("timerWhen"))
-        assertEquals(3_000L, digits(dwelling).getJSONObject("timerInfo").getLong("timerTotal"))
-        assertTrue(focusParam(dwelling).getBoolean("enableFloat"))
-        assertEquals(arrival + 1_000, dwelling.nextAt)
-        val departed = trip.frame(departure, dwelling.stageAt)!!
-        assertEquals("已发车", departed.notification.extras.getString("android.shortCriticalText"))
-        assertFalse(departed.notification.extras.getBoolean(Notification.EXTRA_SHOW_CHRONOMETER))
-        assertFalse(focusParam(departed).getJSONObject("param_island")
-            .getJSONObject("bigIslandArea").has("sameWidthDigitInfo"))
-        assertEquals(end, departed.nextAt)
-        assertNull(trip.frame(end, departed.stageAt))
+        for (focus in listOf(false, true)) {
+            val trip = trip(focus, departure, stage(start, "等车", arrival),
+                stage(arrival, "停靠中", departure, countdownInChip = false))
+            val waiting = trip.frame(start, null)!!
+            val dwelling = trip.frame(arrival, waiting.stageAt)!!
+            assertEquals("停靠中", dwelling.notification.extras.getString("android.shortCriticalText"))
+            assertEquals("停靠中", dwelling.notification.extras.getString(Notification.EXTRA_TEXT))
+            assertEquals(departure, dwelling.notification.`when`)
+            assertTrue(dwelling.notification.extras.getBoolean(Notification.EXTRA_SHOW_CHRONOMETER))
+            if (focus) {
+                val big = focusParam(dwelling).getJSONObject("param_island").getJSONObject("bigIslandArea")
+                assertEquals("鼓楼", big.getJSONObject("imageTextInfoLeft").getJSONObject("textInfo").getString("title"))
+                assertEquals("停靠中", big.getJSONObject("textInfo").getString("title"))
+                assertFalse(big.has("sameWidthDigitInfo"))
+            }
+            val stillDwelling = trip.frame(departure - 1, dwelling.stageAt)!!
+            assertEquals("停靠中", stillDwelling.notification.extras.getString("android.shortCriticalText"))
+            assertEquals(departure, stillDwelling.nextAt)
+            assertNull(trip.frame(departure, stillDwelling.stageAt))
+        }
+    }
+
+    @Test
+    fun leftStationChangesAtTransferWithoutParsingNotificationTitle() {
+        val transfer = start + 2_500
+        val arrival = transfer + 3_000
+        val trip = trip(true, arrival + 1_000,
+            stage(start, "换乘", transfer, station = "鼓楼"),
+            stage(transfer, "到站", arrival, station = "东门口（天一广场）"))
+        val first = trip.frame(start, null)!!
+        var big = focusParam(first).getJSONObject("param_island").getJSONObject("bigIslandArea")
+        assertEquals("鼓楼", big.getJSONObject("imageTextInfoLeft").getJSONObject("textInfo").getString("title"))
+        val next = trip.frame(transfer, first.stageAt)!!
+        big = focusParam(next).getJSONObject("param_island").getJSONObject("bigIslandArea")
+        assertEquals("东门口（天一广场）", big.getJSONObject("imageTextInfoLeft").getJSONObject("textInfo").getString("title"))
+        assertEquals(arrival, digits(next).getJSONObject("timerInfo").getLong("timerWhen"))
+        assertFalse(big.has("textInfo"))
     }
 
     @Test
