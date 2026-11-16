@@ -79,7 +79,8 @@ class WidgetRefreshWorker(context: Context, params: WorkerParameters) : Coroutin
                 manager.cancelUniqueWork(WORK_TICK)
                 return
             }
-            val delay = (soonest - System.currentTimeMillis() + 2_000L).coerceAtLeast(15_000L)
+            // Passed trains drop out on redraw, so the next tick always targets a later arrival.
+            val delay = (soonest - System.currentTimeMillis() + 1_000L).coerceAtLeast(2_000L)
             val request = OneTimeWorkRequestBuilder<WidgetRefreshWorker>()
                 .setInitialDelay(delay, TimeUnit.MILLISECONDS)
                 .build()
