@@ -10,6 +10,7 @@ import '../../core/utils/direction_resolver.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/line_badge.dart';
 import '../../data/providers.dart';
+import 'journey_timing_panel.dart';
 
 class RouteResult extends ConsumerWidget {
   const RouteResult({super.key, required this.plan, required this.catalog});
@@ -67,10 +68,20 @@ class RouteResult extends ConsumerWidget {
         ),
       ),
       Padding(
-        padding: const EdgeInsets.fromLTRB(4, 8, 4, 16),
+        padding: const EdgeInsets.fromLTRB(4, 8, 4, 0),
         child: Text('估算，不含候车/延误；不代表实际运营方案。',
           style: text.bodySmall?.copyWith(color: colors.onSurfaceVariant)),
       ),
+      const SizedBox(height: 16),
+      Card.outlined(child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Text('现在出发', style: text.titleSmall),
+          const SizedBox(height: 12),
+          JourneyTimingPanel(plan: plan, catalog: catalog),
+        ]),
+      )),
+      const SizedBox(height: 16),
       for (var index = 0; index < plan.segments.length; index++) ...[
         if (index > 0) Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),

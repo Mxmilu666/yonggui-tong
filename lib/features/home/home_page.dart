@@ -70,7 +70,7 @@ class HomePage extends ConsumerWidget {
                     for (final station in common) _StationArrivalCard(station: station),
                   ]),
                   if (favoriteRoutes.isNotEmpty) ...[
-                    const _SectionHeader(title: '收藏路线', subtitle: '估算行程与换乘站时刻表间隔'),
+                    const _SectionHeader(title: '收藏路线', subtitle: '现在从起点出发，换乘赶不赶得上'),
                     _ResponsiveColumn(children: [
                       for (final route in favoriteRoutes) FavoriteRouteCard(route: route),
                     ]),
