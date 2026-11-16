@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "dev.yonggui.yonggui_tong"
+    namespace = "com.mxmilu.yonggui_tong"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -15,7 +15,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "dev.yonggui.yonggui_tong"
+        applicationId = "com.mxmilu.yonggui_tong"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

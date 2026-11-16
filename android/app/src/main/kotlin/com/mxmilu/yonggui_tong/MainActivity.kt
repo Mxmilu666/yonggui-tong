@@ -1,4 +1,4 @@
-package dev.yonggui.yonggui_tong
+package com.mxmilu.yonggui_tong
 
 import io.flutter.embedding.android.FlutterActivity
 
