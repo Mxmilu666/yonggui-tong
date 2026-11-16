@@ -46,6 +46,9 @@ jobs:
 
       # One universal APK for anyone unsure, plus smaller per-ABI APKs (same versionCode).
       - run: flutter build apk --release
+      - name: Test native countdown notifications
+        working-directory: android
+        run: ./gradlew :app:testDebugUnitTest
       - run: flutter build apk --release --split-per-abi
       - name: Name release assets
         run: |

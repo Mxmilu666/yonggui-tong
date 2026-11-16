@@ -25,9 +25,8 @@ import org.json.JSONObject
  * One user-started trip (waiting for a train, or a journey) shown as an Android 16 Live Update:
  * a promoted ongoing notification whose status-bar chip counts down.
  *
- * On the reported HyperOS device the island did not show the standard chronometer. Short critical
- * text therefore carries a per-second fallback. If the system reports focus access, the notification
- * instead supplies a `miui.focus.param` timer for System UI to run; access does not prove rendering.
+ * Focus permission does not prove that System UI runs the native timer. Both the standard chip
+ * text and HyperOS digits keep updating each second, alongside the native timer when allowed.
  *
  * The app sends every stage up front. [LiveTripService] keeps the trip in the foreground so stage
  * switches happen on time (deferred background jobs were minutes late) and stops at the end.
@@ -123,6 +122,8 @@ object LiveTrip {
             putParcelable(FOCUS_PIC, Icon.createWithResource(context, R.drawable.ic_stat_metro))
         }
         private val focusActions = Bundle().apply { putParcelable(FOCUS_STOP, stopAction) }
+        private var cachedFocusParam: JSONObject? = null
+        private var focusTarget: Long? = null
         private val builder = Notification.Builder(context, CHANNEL)
             .setSmallIcon(R.drawable.ic_stat_metro)
             .setColor(context.getColor(R.color.live_accent))
@@ -146,7 +147,8 @@ object LiveTrip {
         fun frame(now: Long, previousStageAt: Long?): Frame? {
             val current = stages.lastOrNull { it.at <= now } ?: stages.firstOrNull()
             if (current == null || now >= endsAt) return null
-            if (current.at != previousStageAt) {
+            val stageChanged = current.at != previousStageAt
+            if (stageChanged) {
                 builder.setContentTitle(current.title)
                     .setContentText(current.text)
                     .setStyle(Notification.BigTextStyle().bigText(current.text))
@@ -157,21 +159,37 @@ object LiveTrip {
             } else {
                 builder.setShowWhen(false).setUsesChronometer(false)
             }
-            builder.extras.putBoolean(EXTRA_REQUEST_PROMOTED_ONGOING, true)
-            builder.extras.putString(EXTRA_SHORT_CRITICAL_TEXT, countdownTo?.let { countdown(it - now) } ?: current.chip)
+            val chip = countdownTo?.let { countdown(it - now) } ?: current.chip
+            // Some Android builds merge old notification extras over Builder extras on reuse.
+            // Write live fields after build() so each posted notification contains this tick.
+            val notification = builder.build()
+            notification.extras.putBoolean(EXTRA_REQUEST_PROMOTED_ONGOING, true)
+            notification.extras.putString(EXTRA_SHORT_CRITICAL_TEXT, chip)
             if (focus) {
-                builder.extras.putString("miui.focus.param", focusParam(current, countdownTo, now,
-                    popUp = current.at != previousStageAt, stopTitle = stopTitle))
-                builder.extras.putBundle("miui.focus.pics", focusPictures)
-                builder.extras.putBundle("miui.focus.actions", focusActions)
+                // Only rebuild the template on a stage/target change, not on every second tick.
+                if (stageChanged || cachedFocusParam == null || focusTarget != countdownTo) {
+                    cachedFocusParam = focusParam(current, countdownTo, now, stageChanged, stopTitle)
+                    focusTarget = countdownTo
+                }
+                val param = cachedFocusParam!!.getJSONObject("param_v2")
+                param.put("enableFloat", stageChanged)
+                if (countdownTo != null) {
+                    val digits = param.getJSONObject("param_island").getJSONObject("bigIslandArea")
+                        .getJSONObject("sameWidthDigitInfo")
+                    digits.put("digit", chip)
+                    digits.getJSONObject("timerInfo").put("timerSystemCurrent", now)
+                }
+                notification.extras.putString("miui.focus.param", cachedFocusParam.toString())
+                notification.extras.putBundle("miui.focus.pics", focusPictures)
+                notification.extras.putBundle("miui.focus.actions", focusActions)
             }
 
             var nextAt = minOf(stages.firstOrNull { it.at > now }?.at ?: endsAt, endsAt)
             // Even the final stage must clear its system timer at the target, before the trip ends.
             if (countdownTo != null) nextAt = minOf(nextAt, countdownTo)
-            // The island runs a focus timer itself; the text countdown needs a rebuild each second.
-            if (countdownTo != null && !focus) nextAt = minOf(nextAt, now + (countdownTo - now - 1) % 1000 + 1)
-            return Frame(builder.build(), nextAt, current.at)
+            // Keep text moving even when focus is allowed but System UI ignores the native timer.
+            if (countdownTo != null) nextAt = minOf(nextAt, now + (countdownTo - now - 1) % 1000 + 1)
+            return Frame(notification, nextAt, current.at)
         }
     }
 
@@ -185,14 +203,15 @@ object LiveTrip {
     }
 
     /** HyperOS focus notification / island: icon in the small island, label and timer in the big one. */
-    private fun focusParam(stage: Stage, countdownTo: Long?, now: Long, popUp: Boolean, stopTitle: String): String {
+    private fun focusParam(stage: Stage, countdownTo: Long?, now: Long, popUp: Boolean, stopTitle: String): JSONObject {
         val pic = JSONObject().put("type", 1).put("pic", FOCUS_PIC)
         val left = JSONObject().put("type", 1).put("picInfo", pic)
             .put("textInfo", JSONObject().put("title", stage.chip))
         val big = JSONObject().put("imageTextInfoLeft", left)
         if (countdownTo != null) {
             big.put("sameWidthDigitInfo", JSONObject().put("showHighlightColor", true).put("timerInfo", JSONObject()
-                .put("timerType", -1).put("timerWhen", countdownTo).put("timerTotal", now).put("timerSystemCurrent", now)))
+                .put("timerType", -1).put("timerWhen", countdownTo)
+                .put("timerTotal", countdownTo - stage.at).put("timerSystemCurrent", now)))
         }
         val island = JSONObject().put("islandProperty", 1).put("islandPriority", 2)
             .put("bigIslandArea", big)
@@ -209,7 +228,7 @@ object LiveTrip {
             .put("actions", org.json.JSONArray().put(JSONObject().put("type", 2)
                 .put("action", FOCUS_STOP).put("actionIntentType", 2).put("actionTitle", stopTitle)))
             .put("param_island", island)
-        return JSONObject().put("param_v2", param).toString()
+        return JSONObject().put("param_v2", param)
     }
 }
 

@@ -44,6 +44,9 @@ jobs:
           cache: true
       - run: flutter pub get
       - run: flutter build apk --release
+      - name: Test native countdown notifications
+        working-directory: android
+        run: ./gradlew :app:testDebugUnitTest
       - run: flutter build apk --release --split-per-abi --target-platform android-x64
       - name: Enable KVM
         run: |

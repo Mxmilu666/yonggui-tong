@@ -34,6 +34,10 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+    }
+
     defaultConfig {
         applicationId = "com.mxmilu.yonggui_tong"
         // You can update the following values to match your application needs.
@@ -68,4 +72,6 @@ flutter {
 dependencies {
     // Background refresh for the home screen widget.
     implementation("androidx.work:work-runtime-ktx:2.10.1")
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.robolectric:robolectric:4.16.1")
 }
