@@ -66,8 +66,9 @@ class WidgetStore(context: Context) {
     }
 
     fun saveSchedule(stationId: Int, data: JSONArray, fetchedAt: Long) {
+        val merged = Timetable.mergeDwelling(schedule(stationId), data, fetchedAt)
         prefs.edit()
-            .putString(scheduleKey(stationId), data.toString())
+            .putString(scheduleKey(stationId), merged.toString())
             .putLong(fetchedKey(stationId), fetchedAt)
             .remove(failedKey(stationId))
             .apply()

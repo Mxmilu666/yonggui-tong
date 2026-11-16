@@ -38,10 +38,11 @@ final appRouter = GoRouter(
       ),
       routes: [
         GoRoute(path: '/', pageBuilder: (_, state) => _fadeThrough(state, const HomePage())),
-        GoRoute(path: '/arrivals', pageBuilder: (_, state) => _fadeThrough(state, const ArrivalsPage())),
-        GoRoute(path: '/arrivals/:id', pageBuilder: (_, state) => _fadeThrough(state, ArrivalsPage(
-          stationId: int.tryParse(state.pathParameters['id'] ?? ''),
-        ))),
+        GoRoute(path: '/arrivals', pageBuilder: (_, state) => _fadeThrough(state, const ArrivalsPage()), routes: [
+          GoRoute(path: ':id', builder: (_, state) => ArrivalsPage(
+            stationId: int.tryParse(state.pathParameters['id'] ?? ''),
+          )),
+        ]),
         GoRoute(path: '/map', pageBuilder: (_, state) => _fadeThrough(state, const MapPage())),
         GoRoute(path: '/settings', pageBuilder: (_, state) => _fadeThrough(state, const SettingsPage())),
       ],

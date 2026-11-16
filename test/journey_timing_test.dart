@@ -23,7 +23,7 @@ void main() {
       for (final (line, flag, times) in directions) ArrivalDirection(lineId: line, flag: flag,
         stationId: id, observedAt: now, runs: [
           for (final (index, time) in times.indexed)
-            ArrivalRun(sequence: index + 1, intimeStr: time, outTimeStr: time, intimeDura: 1),
+            ArrivalRun(sequence: index + 1, intimeStr: time, outTimeStr: time, intimeDura: 1, outTimeDura: 1),
         ]),
     ]);
 
@@ -39,6 +39,29 @@ void main() {
     // 东门口 -1 stop-> 鼓楼 on line 1 toward 高桥西 (Flag 2), then 鼓楼 -1 stop-> 城隍庙 on line 2
     // toward 栎社国际机场 (Flag 2).
     plan = RoutePlanner(network, catalog).estimate(origin, catalog.search('城隍庙').single.id)!;
+  });
+
+  test('现在出发仍选择已到站但未发车的列车，等车通知保持到离站', () {
+    final observed = now.subtract(const Duration(minutes: 1));
+    final atPlatform = ArrivalSnapshot(stationId: origin, fetchedAt: observed, directions: [
+      ArrivalDirection(lineId: 1, flag: 2, stationId: origin, observedAt: observed, runs: [
+        const ArrivalRun(sequence: 1, intimeStr: '07:59:50', outTimeStr: '08:00:35', intimeDura: 50, outTimeDura: 95),
+        const ArrivalRun(sequence: 2, intimeStr: '08:03:00', outTimeStr: '08:03:45', intimeDura: 240, outTimeDura: 285),
+      ]),
+    ]);
+    final timing = journeyTiming(plan: plan, catalog: catalog, now: now, snapshots: {origin: atPlatform})!;
+    expect(timing.board, beijing(8, 0, 35));
+    final stop = atPlatform.directions.single.upcoming(now).first;
+    final waiting = waitForTrain(station: catalog.stationById(origin)!, lineId: 1, direction: '往 高桥西',
+      scheduled: stop, now: observed);
+    expect(waiting.stages.first.countdownTo, beijing(7, 59, 50));
+    expect(waiting.stages.last.at, beijing(7, 59, 50));
+    expect(waiting.stages.last.countdownTo, beijing(8, 0, 35));
+    expect(waiting.endsAt, beijing(8, 0, 35));
+    final duringDwell = waitForTrain(station: catalog.stationById(origin)!, lineId: 1, direction: '往 高桥西',
+      scheduled: stop, now: now);
+    expect(duringDwell.stages.single.countdownTo, stop.departAt);
+    expect(duringDwell.stages.single.text, contains('停靠中'));
   });
 
   test('到站对齐换乘站同向来车，接续取之后首班同向去车', () {

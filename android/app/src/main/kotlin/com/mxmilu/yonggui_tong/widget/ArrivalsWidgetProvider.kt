@@ -58,7 +58,7 @@ class ArrivalsWidgetProvider : AppWidgetProvider() {
             WidgetRefreshWorker.schedulePeriodic(context)
         }
 
-        /** Draws every widget from cached data; returns the soonest arrival on screen. */
+        /** Draws cached data; returns the next arrival or departure boundary on screen. */
         fun renderAll(context: Context): Long? {
             val store = WidgetStore(context)
             val manager = AppWidgetManager.getInstance(context)
@@ -104,12 +104,18 @@ class ArrivalsWidgetProvider : AppWidgetProvider() {
                         row.setTextViewText(R.id.row_time, context.getString(R.string.widget_no_train))
                         row.setViewVisibility(R.id.row_countdown, View.GONE)
                     } else {
-                        row.setTextViewText(R.id.row_time, Timetable.clock(next))
-                        // A system chronometer keeps counting down without further widget updates.
-                        row.setChronometer(R.id.row_countdown, SystemClock.elapsedRealtime() + (next - now), null, true)
+                        val dwelling = next.dwelling(now)
+                        val boundary = next.nextBoundary(now)
+                        row.setTextViewText(R.id.row_time, context.getString(
+                            if (dwelling) R.string.widget_dwelling_until else R.string.widget_arrival_at,
+                            Timetable.clock(boundary),
+                        ))
+                        // The chronometer runs independently; WorkManager may redraw after the boundary.
+                        row.setChronometer(R.id.row_countdown, SystemClock.elapsedRealtime() + (boundary - now),
+                            context.getString(if (dwelling) R.string.widget_departure_countdown else R.string.widget_arrival_countdown), true)
                         row.setChronometerCountDown(R.id.row_countdown, true)
                         row.setViewVisibility(R.id.row_countdown, View.VISIBLE)
-                        soonest = minOf(soonest ?: next, next)
+                        soonest = minOf(soonest ?: boundary, boundary)
                     }
                     views.addView(R.id.widget_rows, row)
                 }

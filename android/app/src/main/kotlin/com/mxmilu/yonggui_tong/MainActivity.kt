@@ -36,8 +36,9 @@ class MainActivity : FlutterActivity() {
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "yonggui/live").setMethodCallHandler { call, result ->
             when (call.method) {
                 "start" -> withNotificationPermission { granted ->
-                    if (granted) LiveTrip.start(this, call.arguments as String)
-                    result.success(mapOf("started" to granted, "promoted" to (granted && LiveTrip.canPromote(this))))
+                    val focusAllowed = granted && LiveTrip.start(this, call.arguments as String)
+                    result.success(mapOf("started" to granted,
+                        "promoted" to (granted && LiveTrip.canPromote(this)), "focusAllowed" to focusAllowed))
                 }
                 "stop" -> {
                     LiveTrip.stop(this)

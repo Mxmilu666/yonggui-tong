@@ -2,7 +2,6 @@ import '../models/arrival.dart';
 import '../models/route_plan.dart';
 import '../models/station.dart';
 import 'direction_resolver.dart';
-import 'time_utils.dart';
 
 /// Ride time per stop, the same weight the route estimate uses.
 const rideTimePerStop = Duration(minutes: 2);
@@ -111,10 +110,9 @@ JourneyTiming? journeyTiming({required RoutePlan plan, required Map<int, Arrival
     final times = <DateTime>[
       for (final direction in snapshot.directions)
         if (direction.lineId == line && direction.flag == flag)
-          for (final run in direction.validRuns(now))
-            if (TimeUtils.remaining(departures ? run.outTimeStr : run.intimeStr, now,
-                intimeDura: run.intimeDura) case final left?)
-              now.add(left),
+          for (final run in direction.upcoming(now))
+            if (departures || !run.arriveAt.isBefore(now))
+              departures ? run.departAt : run.arriveAt,
     ]..sort();
     return times;
   }

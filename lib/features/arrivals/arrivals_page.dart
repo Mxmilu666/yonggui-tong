@@ -258,8 +258,8 @@ class _DirectionSection extends StatelessWidget {
     final muted = Theme.of(context).colorScheme.onSurfaceVariant;
     final runs = direction.upcoming(now);
     final next = runs.isEmpty ? null : runs.first;
-    final remaining = next == null ? null
-      : TimeUtils.remaining(next.intimeStr, now, intimeDura: next.intimeDura);
+    final remaining = next?.arriveAt.difference(now);
+    final dwelling = next?.isDwelling(now) ?? false;
     final label = DirectionResolver.label(lineId: direction.lineId, flag: direction.flag, catalog: catalog);
     final station = catalog?.stationById(direction.stationId);
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -270,8 +270,7 @@ class _DirectionSection extends StatelessWidget {
           visualDensity: VisualDensity.compact,
           icon: const Icon(Icons.notifications_active_outlined),
           onPressed: () => LiveTrip.start(context, waitForTrain(
-            station: station, lineId: direction.lineId, direction: label, run: next,
-            arriveAt: now.add(remaining), now: now)),
+            station: station, lineId: direction.lineId, direction: label, scheduled: next, now: now)),
         ),
         if (remaining != null) CountdownText(remaining: remaining, large: !compact),
       ]),
@@ -279,7 +278,7 @@ class _DirectionSection extends StatelessWidget {
       if (next == null)
         Text('暂无有效班次', style: text.bodyMedium?.copyWith(color: muted))
       else
-        Text('${next.intimeStr} 到站 · 第${next.sequence}班',
+        Text('${dwelling ? '${next.run.outTimeStr} 发车' : '${next.run.intimeStr} 到站'} · 第${next.run.sequence}班',
           style: text.bodySmall?.copyWith(color: muted, fontFeatures: const [FontFeature.tabularFigures()])),
       if (!compact && runs.length > 1) ...[
         const SizedBox(height: 4),

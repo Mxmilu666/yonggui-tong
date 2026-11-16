@@ -119,7 +119,7 @@ class MetroRepository {
           throw const ApiException('到站数据与所选站点不符');
         }
         final snapshot = ArrivalSnapshot(stationId: stationId,
-          directions: directions, fetchedAt: fetchedAt);
+          directions: directions, fetchedAt: fetchedAt).retainDwellingFrom(_arrivalCache[stationId]);
         _arrivalCache[stationId] = snapshot;
         _arrivalErrors.remove(stationId);
         completer.complete(snapshot);

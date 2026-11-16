@@ -65,10 +65,11 @@ class FavoriteRoutesNotifier extends Notifier<List<FavoriteRoute>> {
 
 class AppSettings {
   const AppSettings({this.themeMode = ThemeMode.system, this.dynamicColor = false,
-    this.refreshSeconds = 60});
+    this.refreshSeconds = 60, this.arrivalSeconds = false});
   final ThemeMode themeMode;
   final bool dynamicColor;
   final int refreshSeconds;
+  final bool arrivalSeconds;
 }
 final settingsProvider = NotifierProvider<SettingsController, AppSettings>(SettingsController.new);
 class SettingsController extends Notifier<AppSettings> {
@@ -78,23 +79,29 @@ class SettingsController extends Notifier<AppSettings> {
     final mode = prefs.getString('settings.theme');
     return AppSettings(themeMode: ThemeMode.values.firstWhere((m) => m.name == mode,
       orElse: () => ThemeMode.system), dynamicColor: prefs.getBool('settings.dynamic') ?? false,
-      refreshSeconds: prefs.getInt('settings.refresh') == 120 ? 120 : 60);
+      refreshSeconds: prefs.getInt('settings.refresh') == 120 ? 120 : 60,
+      arrivalSeconds: prefs.getBool('settings.arrivalSeconds') ?? false);
   }
   Future<void> setThemeMode(ThemeMode mode) async {
     await ref.read(preferencesProvider).setString('settings.theme', mode.name);
     state = AppSettings(themeMode: mode, dynamicColor: state.dynamicColor,
-      refreshSeconds: state.refreshSeconds);
+      refreshSeconds: state.refreshSeconds, arrivalSeconds: state.arrivalSeconds);
   }
   Future<void> setDynamicColor(bool enabled) async {
     await ref.read(preferencesProvider).setBool('settings.dynamic', enabled);
     state = AppSettings(themeMode: state.themeMode, dynamicColor: enabled,
-      refreshSeconds: state.refreshSeconds);
+      refreshSeconds: state.refreshSeconds, arrivalSeconds: state.arrivalSeconds);
   }
   Future<void> setRefreshSeconds(int seconds) async {
     if (seconds != 60 && seconds != 120) throw ArgumentError.value(seconds);
     await ref.read(preferencesProvider).setInt('settings.refresh', seconds);
     state = AppSettings(themeMode: state.themeMode, dynamicColor: state.dynamicColor,
-      refreshSeconds: seconds);
+      refreshSeconds: seconds, arrivalSeconds: state.arrivalSeconds);
+  }
+  Future<void> setArrivalSeconds(bool enabled) async {
+    await ref.read(preferencesProvider).setBool('settings.arrivalSeconds', enabled);
+    state = AppSettings(themeMode: state.themeMode, dynamicColor: state.dynamicColor,
+      refreshSeconds: state.refreshSeconds, arrivalSeconds: enabled);
   }
 }
 

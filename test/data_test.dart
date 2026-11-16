@@ -103,19 +103,25 @@ void main() {
     expect(catalog.stationsForLine(12).first.name, '大目湾');
   });
 
-  test('countdown uses Beijing wall time, rejects past and accepts narrow midnight rollover', () {
+  test('departure uses Beijing snapshot time, rejects past and accepts narrow midnight rollover', () {
     final instant = DateTime.parse('2026-11-16T00:00:00+08:00');
-    expect(TimeUtils.remaining('00:01:01', instant, intimeDura: 61), const Duration(seconds: 61));
-    expect(TimeUtils.remaining('00:01:01', instant.toLocal(), intimeDura: 61), const Duration(seconds: 61));
-    expect(TimeUtils.remaining('00:01:00', DateTime.parse('2026-11-15T23:59:00+08:00'),
-      intimeDura: 120), const Duration(minutes: 2));
-    expect(TimeUtils.remaining('09:59:59', DateTime.parse('2026-11-16T10:00:00+08:00'),
-      intimeDura: 1), isNull);
-    expect(TimeUtils.remaining('08:00:00', instant, intimeDura: 1), isNull);
-    expect(TimeUtils.remaining('25:01:00', instant, intimeDura: 1), isNull);
-    expect(TimeUtils.remaining('00:01:00', instant, intimeDura: -60), isNull);
+    expect(TimeUtils.departure('00:01:01', instant), instant.add(const Duration(seconds: 61)));
+    expect(TimeUtils.departure('00:01:01', instant.toLocal()), instant.add(const Duration(seconds: 61)));
+    expect(TimeUtils.departure('00:01:00', DateTime.parse('2026-11-15T23:59:00+08:00')),
+      instant.add(const Duration(minutes: 1)));
+    expect(TimeUtils.departure('09:59:59', DateTime.parse('2026-11-16T10:00:00+08:00')), isNull);
+    expect(TimeUtils.departure('08:00:00', instant), isNull);
+    expect(TimeUtils.departure('25:01:00', instant), isNull);
+    expect(TimeUtils.countdown(Duration.zero), '停靠中');
     expect(TimeUtils.countdown(const Duration(seconds: 60)), '即将到站');
     expect(TimeUtils.countdown(const Duration(seconds: 61)), '2 分钟后');
+    expect(TimeUtils.countdown(const Duration(seconds: 135), showSeconds: true), '02:15');
+    expect(TimeUtils.countdown(const Duration(seconds: 59), showSeconds: true), '00:59');
+    expect(TimeUtils.countdown(const Duration(microseconds: 1), showSeconds: true), '00:01');
+    expect(TimeUtils.countdown(const Duration(milliseconds: 60100), showSeconds: true), '01:01');
+    expect(TimeUtils.countdown(const Duration(hours: 1, seconds: 5), showSeconds: true), '60:05');
+    expect(TimeUtils.countdown(Duration.zero, showSeconds: true), '停靠中');
+    expect(TimeUtils.countdown(const Duration(seconds: -5), showSeconds: true), '停靠中');
   });
 
   test('four real Gulou direction blocks survive sentinel filtering', () {
@@ -123,14 +129,14 @@ void main() {
       ArrivalDirection.fromJson(Map<String, dynamic>.from(e as Map), observedAt: now)).toList();
     expect(directions.length, 4);
     expect(directions.map((d) => '${d.lineId}_${d.flag}'), ['1_1', '1_2', '2_1', '2_2']);
-    expect(directions.every((d) => d.runs.isNotEmpty && d.validRuns(now).isEmpty), isTrue);
+    expect(directions.every((d) => d.runs.isNotEmpty && d.upcoming(now).isEmpty), isTrue);
   });
 
   test('cached timetable never reappears the next day', () {
     final direction = ArrivalDirection(lineId: 1, flag: 1, stationId: 16,
       observedAt: DateTime.parse('2026-11-15T10:00:00+08:00'), runs: [
-        const ArrivalRun(sequence: 1, intimeStr: '10:03:00', outTimeStr: '10:03:20', intimeDura: 180)]);
-    expect(direction.validRuns(DateTime.parse('2026-11-16T10:01:00+08:00')), isEmpty);
+        const ArrivalRun(sequence: 1, intimeStr: '10:03:00', outTimeStr: '10:03:20', intimeDura: 180, outTimeDura: 200)]);
+    expect(direction.upcoming(DateTime.parse('2026-11-16T10:01:00+08:00')), isEmpty);
   });
 
   test('catalog persists, stays fresh for 24 hours, then cached-first refreshes', () async {
@@ -243,6 +249,7 @@ void main() {
     final container = ProviderContainer(overrides: [preferencesProvider.overrideWithValue(prefs)]);
     expect(container.read(settingsProvider).dynamicColor, isFalse);
     await container.read(favoritesProvider.notifier).toggle(16);
+    await container.read(settingsProvider.notifier).setArrivalSeconds(true);
     await container.read(settingsProvider.notifier).setThemeMode(ThemeMode.dark);
     await container.read(settingsProvider.notifier).setDynamicColor(true);
     await container.read(settingsProvider.notifier).setRefreshSeconds(120);
@@ -253,5 +260,6 @@ void main() {
     expect(restored.read(settingsProvider).themeMode, ThemeMode.dark);
     expect(restored.read(settingsProvider).dynamicColor, isTrue);
     expect(restored.read(settingsProvider).refreshSeconds, 120);
+    expect(restored.read(settingsProvider).arrivalSeconds, isTrue);
   });
 }

@@ -26,11 +26,13 @@ abstract final class LiveTrip {
     messenger.hideCurrentSnackBar();
     if (result?['started'] != true) {
       messenger.showSnackBar(const SnackBar(content: Text('需要通知权限才能在状态栏显示')));
+    } else if (result?['focusAllowed'] == true) {
+      messenger.showSnackBar(const SnackBar(content: Text('已开始，系统允许超级岛通知；实际展示由系统决定')));
     } else if (result?['promoted'] == true) {
-      messenger.showSnackBar(const SnackBar(content: Text('已显示在状态栏，结束后自动消失')));
+      messenger.showSnackBar(const SnackBar(content: Text('已开始，系统允许实时更新；实际展示由系统决定')));
     } else {
       messenger.showSnackBar(SnackBar(
-        content: const Text('已开始。系统没有开启「实时更新」，只显示为常驻通知'),
+        content: const Text('已开始常驻通知，暂未获得实时更新或超级岛权限，可查看通知设置'),
         action: SnackBarAction(label: '去开启', onPressed: () => _channel.invokeMethod<void>('openSettings')),
       ));
     }

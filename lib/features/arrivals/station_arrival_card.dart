@@ -26,7 +26,7 @@ class StationArrivalCard extends ConsumerWidget {
     final snapshot = state.snapshot;
     final directions = [...?snapshot?.directions]
       ..sort((a, b) => a.lineId != b.lineId ? a.lineId.compareTo(b.lineId) : a.flag.compareTo(b.flag));
-    final anyRun = directions.any((direction) => direction.validRuns(now).isNotEmpty);
+    final anyRun = directions.any((direction) => direction.upcoming(now).isNotEmpty);
     return Card.outlined(
       child: InkWell(
         onTap: () => context.go('/arrivals/${station.id}'),
@@ -88,7 +88,8 @@ class _NextTrainRow extends StatelessWidget {
     final muted = Theme.of(context).colorScheme.onSurfaceVariant;
     final runs = direction.upcoming(now);
     final next = runs.isEmpty ? null : runs.first;
-    final remaining = next == null ? null : TimeUtils.remaining(next.intimeStr, now, intimeDura: next.intimeDura);
+    final remaining = next?.arriveAt.difference(now);
+    final dwelling = next?.isDwelling(now) ?? false;
     return SizedBox(
       height: 40,
       child: Row(children: [
@@ -100,8 +101,8 @@ class _NextTrainRow extends StatelessWidget {
         if (next == null || remaining == null)
           Text('暂无班次', style: text.bodyMedium?.copyWith(color: muted))
         else ...[
-          Text(next.intimeStr.substring(0, 5), style: text.bodySmall?.copyWith(color: muted,
-            fontFeatures: const [FontFeature.tabularFigures()])),
+          Text(dwelling ? '${next.run.outTimeStr.substring(0, 5)} 发车' : next.run.intimeStr.substring(0, 5),
+            style: text.bodySmall?.copyWith(color: muted, fontFeatures: const [FontFeature.tabularFigures()])),
           const SizedBox(width: 10),
           CountdownText(remaining: remaining, large: false),
         ],

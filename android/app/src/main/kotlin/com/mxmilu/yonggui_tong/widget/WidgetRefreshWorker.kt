@@ -14,8 +14,8 @@ import kotlinx.coroutines.withContext
 import java.util.concurrent.TimeUnit
 
 /**
- * Fetches schedules for the stations on screen and redraws. Runs on demand, every 15 minutes,
- * and right after the soonest train shown arrives so the countdown never runs past zero for long.
+ * Fetches schedules and redraws on demand, every 15 minutes, and requests work at the next
+ * arrival/departure boundary. WorkManager is inexact and may deliver boundary work late.
  */
 class WidgetRefreshWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
@@ -34,7 +34,8 @@ class WidgetRefreshWorker(context: Context, params: WorkerParameters) : Coroutin
                 (running != null && running <= 1)
             if (!due) continue
             try {
-                store.saveSchedule(stationId, ScheduleClient.fetch(stationId), now)
+                val data = ScheduleClient.fetch(stationId)
+                store.saveSchedule(stationId, data, System.currentTimeMillis())
             } catch (error: Exception) {
                 store.markFailure(stationId, now)
             }
@@ -79,7 +80,7 @@ class WidgetRefreshWorker(context: Context, params: WorkerParameters) : Coroutin
                 manager.cancelUniqueWork(WORK_TICK)
                 return
             }
-            // Passed trains drop out on redraw, so the next tick always targets a later arrival.
+            // Arrival transitions to departure; departed trains drop out on the next redraw.
             val delay = (soonest - System.currentTimeMillis() + 1_000L).coerceAtLeast(2_000L)
             val request = OneTimeWorkRequestBuilder<WidgetRefreshWorker>()
                 .setInitialDelay(delay, TimeUnit.MILLISECONDS)

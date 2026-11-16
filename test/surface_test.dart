@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -69,6 +70,46 @@ void main() {
       jsonDecode(File('assets/data/network.json').readAsStringSync()) as Map<String, dynamic>)),
   ], child: child);
 
+  testWidgets('首页和到站详情在停靠期间保留当前车，离站后才切换', (tester) async {
+    tester.view.physicalSize = const Size(320, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final gulou = catalog.search('鼓楼').single;
+    await preferences.setStringList('metro.favorites.v1', ['${gulou.id}']);
+    snapshot = ArrivalSnapshot(stationId: gulou.id, fetchedAt: now, directions: [
+      ArrivalDirection(lineId: 1, flag: 1, stationId: gulou.id, observedAt: now, runs: [
+        const ArrivalRun(sequence: 1, intimeStr: '01:26:50', outTimeStr: '01:27:35', intimeDura: -10, outTimeDura: 35),
+        const ArrivalRun(sequence: 2, intimeStr: '01:31:00', outTimeStr: '01:31:45', intimeDura: 240, outTimeDura: 285),
+      ]),
+    ]);
+    await tester.pumpWidget(scope(MaterialApp(home: const HomePage())));
+    await tester.pumpAndSettle();
+    expect(find.text('停靠中'), findsOneWidget);
+    expect(find.text('01:27 发车'), findsOneWidget);
+    expect(find.text('01:31'), findsNothing);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+    final clock = StreamController<DateTime>.broadcast();
+    addTearDown(clock.close);
+    await tester.pumpWidget(ProviderScope(overrides: [
+      preferencesProvider.overrideWithValue(preferences),
+      catalogProvider.overrideWith(() => _FixtureCatalog(catalog)),
+      arrivalsProvider.overrideWith(() => _FixtureArrivals(snapshot)),
+      nowProvider.overrideWith((ref) => clock.stream),
+    ], child: MaterialApp(home: ArrivalsPage(stationId: gulou.id))));
+    clock.add(now);
+    await tester.pumpAndSettle();
+    expect(find.text('停靠中'), findsOneWidget);
+    expect(find.text('01:27:35 发车 · 第1班'), findsOneWidget);
+    clock.add(now.add(const Duration(seconds: 35)));
+    await tester.pumpAndSettle();
+    expect(find.text('停靠中'), findsNothing);
+    expect(find.text('01:31:00 到站 · 第2班'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
   testWidgets('320dp home search routes the real 鼓楼 ID and retains four empty directions', (tester) async {
     tester.view.physicalSize = const Size(320, 900);
     tester.view.devicePixelRatio = 1;
@@ -131,7 +172,7 @@ void main() {
     await preferences.setStringList('metro.favorites.v1', ['${gulou.id}']);
     snapshot = ArrivalSnapshot(stationId: gulou.id, fetchedAt: now, directions: [
       ArrivalDirection(lineId: 2, flag: 2, stationId: gulou.id, observedAt: now, runs: [
-        const ArrivalRun(sequence: 1, intimeStr: '01:29:00', outTimeStr: '01:29:20', intimeDura: 1),
+        const ArrivalRun(sequence: 1, intimeStr: '01:29:00', outTimeStr: '01:29:20', intimeDura: 1, outTimeDura: 1),
       ]),
     ]);
     await tester.pumpWidget(scope(MaterialApp(home: const HomePage())));
@@ -142,7 +183,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('到站页的收藏车站直接显示各方向下一班', (tester) async {
+  testWidgets('到站收藏显示下一班，收藏、搜索及直接进入站点后均可返回列表', (tester) async {
     tester.view.physicalSize = const Size(320, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -151,12 +192,46 @@ void main() {
     await preferences.setStringList('metro.favorites.v1', ['${gulou.id}']);
     snapshot = ArrivalSnapshot(stationId: gulou.id, fetchedAt: now, directions: [
       ArrivalDirection(lineId: 1, flag: 1, stationId: gulou.id, observedAt: now, runs: [
-        const ArrivalRun(sequence: 1, intimeStr: '01:31:00', outTimeStr: '01:31:30', intimeDura: 1),
+        const ArrivalRun(sequence: 1, intimeStr: '01:31:00', outTimeStr: '01:31:30', intimeDura: 1, outTimeDura: 1),
       ]),
     ]);
-    await tester.pumpWidget(scope(MaterialApp(home: const ArrivalsPage())));
+    appRouter.go('/');
+    addTearDown(() => appRouter.go('/'));
+    await tester.pumpWidget(scope(MaterialApp.router(routerConfig: appRouter)));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('到站'));
     await tester.pumpAndSettle();
     expect(find.text('往 霞浦'), findsOneWidget);
+    expect(find.text('01:31'), findsOneWidget);
+    await tester.tap(find.text('鼓楼'));
+    await tester.pumpAndSettle();
+    expect(tester.widget<ArrivalsPage>(find.byType(ArrivalsPage)).stationId, gulou.id);
+    expect(find.text('车站详情'), findsOneWidget);
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(tester.widget<ArrivalsPage>(find.byType(ArrivalsPage)).stationId, isNull);
+    expect(find.text('01:31'), findsOneWidget);
+
+    await tester.tap(find.byType(SearchBar));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).last, '鼓楼');
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(ListTile, '鼓楼'));
+    await tester.pumpAndSettle();
+    expect(tester.widget<ArrivalsPage>(find.byType(ArrivalsPage)).stationId, gulou.id);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    expect(tester.widget<ArrivalsPage>(find.byType(ArrivalsPage)).stationId, isNull);
+
+    appRouter.go('/');
+    await tester.pumpAndSettle();
+    appRouter.go('/arrivals/${gulou.id}');
+    await tester.pumpAndSettle();
+    expect(tester.widget<ArrivalsPage>(find.byType(ArrivalsPage)).stationId, gulou.id);
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(tester.widget<ArrivalsPage>(find.byType(ArrivalsPage)).stationId, isNull);
+    expect(find.text('收藏车站'), findsOneWidget);
     expect(find.text('01:31'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });

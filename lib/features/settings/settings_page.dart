@@ -112,6 +112,25 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             ),
             const _SectionTitle('数据与刷新'),
             const ListTile(
+              leading: Icon(Icons.timer_outlined),
+              title: Text('到站倒计时显示'),
+              subtitle: Text('应用内显示分钟或分秒（如 02:15），不改变数据刷新频率'),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: SegmentedButton<bool>(
+                style: segmentStyle,
+                showSelectedIcon: false,
+                segments: const [
+                  ButtonSegment(value: false, label: Text('分钟')),
+                  ButtonSegment(value: true, label: Text('分秒')),
+                ],
+                selected: {settings.arrivalSeconds},
+                onSelectionChanged: _saving ? null
+                  : (value) => _save(() => ref.read(settingsProvider.notifier).setArrivalSeconds(value.single)),
+              ),
+            ),
+            const ListTile(
               leading: Icon(Icons.update_rounded),
               title: Text('到站自动刷新'),
               subtitle: Text('退到后台时暂停，回到前台立即刷新'),
