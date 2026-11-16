@@ -2,6 +2,8 @@
 
 宁波地铁综合出行助手。纯 Flutter 客户端，无登录、支付或后端，不使用官方 Logo。
 
+应用图标是自绘的“甬”字轨道图形：顶部是串在黄色线路上的站点环，“用”画成两条钢轨加枕木。源文件为 `assets/brand.svg`；Android 自适应图标是对应的矢量 `ic_yonggui_foreground.xml`，其余 PNG（Android 旧版、iOS、Web）用 `tool/render_icons.sh`（macOS，需 Chrome）重新生成。
+
 ## 运行
 
 Flutter stable（开发环境 3.50.0 / Dart 3.14），Android / iOS / Web 工程。

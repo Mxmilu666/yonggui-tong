@@ -1,7 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108">
-  <rect width="108" height="108" rx="24" fill="#0B6E8F"/>
-  <path d="M38 25h32q10 0 10 10v34q0 10-10 10H38q-10 0-10-10V35q0-10 10-10z" fill="#fff"/>
-  <path d="M37 37h34v13H37zm0 20h13v12H37zm21 0h13v12H58z" fill="#0B6E8F"/>
-  <path d="m43 27 11 5 11-5-4 10H47z" fill="#0B6E8F"/>
-  <path d="m42 78-9 11m33-11 9 11M38 85h32" stroke="#fff" stroke-width="5" stroke-linecap="round"/>
+  <!-- 甬轨通 mark: 甬's top is a station ring on a metro line, 用 is drawn as track (rails and sleepers).
+       Keep in sync with android/app/src/main/res/drawable/ic_yonggui_foreground.xml;
+       regenerate PNGs with tool/render_icons.sh. -->
+  <rect id="bg" width="108" height="108" fill="#0B6E8F"/>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round" transform="translate(54 54.75) scale(1.08) translate(-54 -54.75)">
+    <circle cx="54" cy="31" r="5" stroke="#FFC94A" stroke-width="5.5"/>
+    <path d="M38 64V44H70V74Q70 81 63 81M38 64Q38 74 33 79" stroke="#FFFFFF" stroke-width="6"/>
+    <path d="M38 56H70M38 67H70" stroke="#FFFFFF" stroke-width="4.5"/>
+    <path d="M54 36.5V83" stroke="#FFC94A" stroke-width="6"/>
+  </g>
 </svg>
