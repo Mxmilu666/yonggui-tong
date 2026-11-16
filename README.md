@@ -37,14 +37,16 @@
 
 ## 安装
 
-目前还没有发布安装包，可以自己编译：安装 [Flutter](https://docs.flutter.dev/get-started/install)（stable）后，连接手机或打开模拟器，在项目目录运行
+**Android**：到本仓库的 Releases 页面下载最新的 `yonggui-tong-vX.Y.Z.apk`，在手机上打开安装即可。
+
+**自己编译**（Android / iOS）：安装 [Flutter](https://docs.flutter.dev/get-started/install)（stable）后，连接手机或打开模拟器，在项目目录运行
 
 ```sh
 flutter pub get
 flutter run
 ```
 
-支持 Android 和 iOS，不需要注册账号或任何密钥。
+不需要注册账号或任何密钥。
 
 ## 说明
 
@@ -57,8 +59,13 @@ flutter run
 <details>
 <summary>开发者</summary>
 
-- 测试：`flutter analyze`、`flutter test`（离线，使用保存的真实接口样本）。
+- 测试：`flutter analyze`、`flutter test`（离线，使用保存的真实接口样本）。每次推送和 PR 由 GitHub Actions 自动运行，并构建 Android 安装包。
+- 发布：推送 `v1.2.3` 这样的标签，Actions 会构建 APK 并发布到 Releases。要用固定签名（方便用户覆盖升级），在仓库 Secrets 中配置 `ANDROID_KEYSTORE_BASE64`、`ANDROID_KEYSTORE_PASSWORD`、`ANDROID_KEY_ALIAS`、`ANDROID_KEY_PASSWORD`；不配置时使用临时调试签名。
 - 应用图标源文件是 `assets/brand.svg`，修改后运行 `tool/render_icons.sh`（macOS，需 Chrome）重新生成各平台图标。
 - 中文字体 Noto Sans SC 随应用打包，许可见 `assets/fonts/OFL.txt`。
 
 </details>
+
+## 许可
+
+[MIT](LICENSE)

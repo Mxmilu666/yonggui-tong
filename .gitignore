@@ -49,3 +49,8 @@ app.*.map.json
 
 # Local-only notes (product brief, API research); never committed
 /docs/
+
+# Android release signing (provided by CI secrets)
+/android/key.properties
+*.jks
+*.keystore
