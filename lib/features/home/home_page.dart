@@ -9,6 +9,7 @@ import '../../core/utils/direction_resolver.dart';
 import '../../core/utils/time_utils.dart';
 import '../../core/widgets/error_state.dart';
 import '../../core/widgets/line_badge.dart';
+import 'favorite_route_card.dart';
 import '../../data/providers.dart';
 import '../search/station_search.dart';
 
@@ -20,6 +21,7 @@ class HomePage extends ConsumerWidget {
     final catalog = ref.watch(catalogProvider);
     final data = catalog.valueOrNull;
     final favorites = ref.watch(favoritesProvider);
+    final favoriteRoutes = ref.watch(favoriteRoutesProvider);
     final favoriteStations = data?.stations.where((station) => favorites.contains(station.id)).toList() ?? <Station>[];
     final common = favoriteStations.isNotEmpty
       ? favoriteStations
@@ -124,7 +126,27 @@ class HomePage extends ConsumerWidget {
                     onPressed: () => context.push('/planner'),
                     icon: const Icon(Icons.alt_route), label: const Text('选起终点，估算行程'),
                   ),
-                  const SizedBox(height: 28),
+                  if (favoriteRoutes.isNotEmpty) ...[
+                    const SizedBox(height: 28),
+                    Row(children: [
+                      Expanded(child: Text('收藏路线', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600))),
+                      TextButton(onPressed: () => context.push('/planner'), child: const Text('估算行程')),
+                    ]),
+                    Text('快速查看收藏路线的换乘提醒', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colors.onSurfaceVariant)),
+                    const SizedBox(height: 16),
+                    LayoutBuilder(builder: (context, constraints) =>
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          for (final route in favoriteRoutes) Padding(
+                            padding: const EdgeInsets.only(right: 12),
+                            child: SizedBox(width: constraints.maxWidth >= 560
+                              ? (constraints.maxWidth - 12) / 2 : constraints.maxWidth * .92,
+                              child: FavoriteRouteCard(route: route)),
+                          ),
+                        ]),
+                      )),
+                  ],
                   Row(children: [
                     Expanded(child: Text('探索线路', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600))),
                     TextButton(onPressed: () => context.go('/map'), child: const Text('查看线网')),
