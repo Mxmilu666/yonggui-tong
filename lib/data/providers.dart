@@ -3,6 +3,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/models/arrival.dart';
+import '../core/models/favorite_route.dart';
 import '../core/models/station.dart';
 import 'repositories/favorites_repository.dart';
 import 'repositories/metro_repository.dart';
@@ -47,6 +48,20 @@ class FavoritesController extends Notifier<Set<int>> {
     await FavoritesRepository(ref.read(preferencesProvider)).save(next);
     state = Set.unmodifiable(next);
   }
+}
+
+final favoriteRoutesProvider = NotifierProvider<FavoriteRoutesNotifier, List<FavoriteRoute>>(FavoriteRoutesNotifier.new);
+class FavoriteRoutesNotifier extends Notifier<List<FavoriteRoute>> {
+  @override
+  List<FavoriteRoute> build() => FavoritesRepository(ref.watch(preferencesProvider)).loadRoutes();
+
+  Future<void> toggle(FavoriteRoute route) async {
+    final prefs = ref.read(preferencesProvider);
+    await FavoritesRepository(prefs).toggleRoute(route);
+    state = FavoritesRepository(prefs).loadRoutes();
+  }
+
+  bool contains(FavoriteRoute route) => state.contains(route);
 }
 
 class AppSettings {
