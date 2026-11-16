@@ -9,6 +9,26 @@ import '../features/planner/planner_page.dart';
 import '../features/settings/settings_page.dart';
 import '../features/stations/station_page.dart';
 
+/// MD3 fade-through for top-level destinations: the old page fades out in the first
+/// 35 %, then the new one fades in while scaling up from 92 %.
+CustomTransitionPage<void> _fadeThrough(GoRouterState state, Widget child) => CustomTransitionPage<void>(
+  key: state.pageKey,
+  child: child,
+  transitionDuration: const Duration(milliseconds: 300),
+  reverseTransitionDuration: const Duration(milliseconds: 300),
+  transitionsBuilder: (context, animation, secondaryAnimation, child) {
+    final enter = CurvedAnimation(parent: animation, curve: const Interval(.35, 1, curve: Curves.easeOutCubic));
+    final exit = CurvedAnimation(parent: secondaryAnimation, curve: const Interval(0, .35, curve: Curves.easeInCubic));
+    return FadeTransition(
+      opacity: ReverseAnimation(exit),
+      child: FadeTransition(
+        opacity: enter,
+        child: ScaleTransition(scale: Tween(begin: .92, end: 1.0).animate(enter), child: child),
+      ),
+    );
+  },
+);
+
 final appRouter = GoRouter(
   routes: [
     ShellRoute(
@@ -17,13 +37,13 @@ final appRouter = GoRouter(
         child: child,
       ),
       routes: [
-        GoRoute(path: '/', builder: (_, _) => const HomePage()),
-        GoRoute(path: '/arrivals', builder: (_, _) => const ArrivalsPage()),
-        GoRoute(path: '/arrivals/:id', builder: (_, state) => ArrivalsPage(
+        GoRoute(path: '/', pageBuilder: (_, state) => _fadeThrough(state, const HomePage())),
+        GoRoute(path: '/arrivals', pageBuilder: (_, state) => _fadeThrough(state, const ArrivalsPage())),
+        GoRoute(path: '/arrivals/:id', pageBuilder: (_, state) => _fadeThrough(state, ArrivalsPage(
           stationId: int.tryParse(state.pathParameters['id'] ?? ''),
-        )),
-        GoRoute(path: '/map', builder: (_, _) => const MapPage()),
-        GoRoute(path: '/settings', builder: (_, _) => const SettingsPage()),
+        ))),
+        GoRoute(path: '/map', pageBuilder: (_, state) => _fadeThrough(state, const MapPage())),
+        GoRoute(path: '/settings', pageBuilder: (_, state) => _fadeThrough(state, const SettingsPage())),
       ],
     ),
     GoRoute(path: '/lines', builder: (_, _) => const LinesPage()),

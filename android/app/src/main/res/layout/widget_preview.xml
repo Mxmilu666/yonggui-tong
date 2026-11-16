@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Widget picker preview only; sample times, never shown as real data. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_background"
+    android:orientation="vertical"
+    android:paddingStart="16dp"
+    android:paddingTop="8dp"
+    android:paddingEnd="16dp"
+    android:paddingBottom="12dp">
+    <TextView android:layout_width="match_parent" android:layout_height="40dp" android:gravity="center_vertical" android:text="鼓楼" android:textColor="@color/widget_on_surface" android:textSize="17sp" android:textStyle="bold" />
+    <LinearLayout android:layout_width="match_parent" android:layout_height="30dp" android:gravity="center_vertical" android:orientation="horizontal">
+        <ImageView android:layout_width="4dp" android:layout_height="16dp" android:src="@drawable/widget_line_bar" android:tint="#FF138FC9" android:importantForAccessibility="no" />
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="10dp" android:layout_weight="1" android:singleLine="true" android:text="往 霞浦" android:textColor="@color/widget_on_surface" android:textSize="14sp" />
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:fontFeatureSettings="tnum" android:text="08:31" android:textColor="@color/widget_muted" android:textSize="13sp" />
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="10dp" android:fontFeatureSettings="tnum" android:gravity="end" android:minWidth="48dp" android:text="02:41" android:textColor="@color/widget_accent" android:textSize="16sp" android:textStyle="bold" />
+    </LinearLayout>
+    <LinearLayout android:layout_width="match_parent" android:layout_height="30dp" android:gravity="center_vertical" android:orientation="horizontal">
+        <ImageView android:layout_width="4dp" android:layout_height="16dp" android:src="@drawable/widget_line_bar" android:tint="#FF138FC9" android:importantForAccessibility="no" />
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="10dp" android:layout_weight="1" android:singleLine="true" android:text="往 高桥西" android:textColor="@color/widget_on_surface" android:textSize="14sp" />
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:fontFeatureSettings="tnum" android:text="08:33" android:textColor="@color/widget_muted" android:textSize="13sp" />
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="10dp" android:fontFeatureSettings="tnum" android:gravity="end" android:minWidth="48dp" android:text="04:05" android:textColor="@color/widget_accent" android:textSize="16sp" android:textStyle="bold" />
+    </LinearLayout>
+    <LinearLayout android:layout_width="match_parent" android:layout_height="30dp" android:gravity="center_vertical" android:orientation="horizontal">
+        <ImageView android:layout_width="4dp" android:layout_height="16dp" android:src="@drawable/widget_line_bar" android:tint="#FFD60B17" android:importantForAccessibility="no" />
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="10dp" android:layout_weight="1" android:singleLine="true" android:text="往 红联" android:textColor="@color/widget_on_surface" android:textSize="14sp" />
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:fontFeatureSettings="tnum" android:text="08:30" android:textColor="@color/widget_muted" android:textSize="13sp" />
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="10dp" android:fontFeatureSettings="tnum" android:gravity="end" android:minWidth="48dp" android:text="01:12" android:textColor="@color/widget_accent" android:textSize="16sp" android:textStyle="bold" />
+    </LinearLayout>
+    <LinearLayout android:layout_width="match_parent" android:layout_height="30dp" android:gravity="center_vertical" android:orientation="horizontal">
+        <ImageView android:layout_width="4dp" android:layout_height="16dp" android:src="@drawable/widget_line_bar" android:tint="#FFD60B17" android:importantForAccessibility="no" />
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="10dp" android:layout_weight="1" android:singleLine="true" android:text="往 栎社国际机场" android:textColor="@color/widget_on_surface" android:textSize="14sp" />
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:fontFeatureSettings="tnum" android:text="08:35" android:textColor="@color/widget_muted" android:textSize="13sp" />
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="10dp" android:fontFeatureSettings="tnum" android:gravity="end" android:minWidth="48dp" android:text="06:30" android:textColor="@color/widget_accent" android:textSize="16sp" android:textStyle="bold" />
+    </LinearLayout>
+</LinearLayout>

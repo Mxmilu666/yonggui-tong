@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="widget_surface">#FFF5FAFD</color>
+    <color name="widget_on_surface">#FF171C1F</color>
+    <color name="widget_muted">#FF40484C</color>
+    <color name="widget_accent">#FF0B6E8F</color>
+    <color name="widget_chip">#FFCDE6F4</color>
+    <color name="widget_on_chip">#FF061E2A</color>
+    <string name="app_widget_title">甬轨通</string>
+    <string name="widget_description">收藏车站各方向的下一班</string>
+    <string name="widget_no_favorites">在甬轨通里收藏车站，这里就会显示下一班</string>
+    <string name="widget_loading">正在获取到站…</string>
+    <string name="widget_no_train">暂无班次</string>
+    <string name="widget_updated">更新于 %s</string>
+    <string name="widget_update_failed">更新失败</string>
+    <string name="widget_refresh">刷新</string>
+</resources>

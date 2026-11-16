@@ -2,6 +2,7 @@ import 'package:dynamic_color/dynamic_color.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../data/favorite_widget.dart';
 import '../data/providers.dart';
 import 'router.dart';
 import 'theme/app_theme.dart';
@@ -18,6 +19,9 @@ class _YongguiAppState extends ConsumerState<YongguiApp> with WidgetsBindingObse
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    ref.listenManual(favoriteWidgetPayloadProvider, (_, payload) {
+      if (payload != null) FavoriteWidget.sync(payload);
+    }, fireImmediately: true);
   }
 
   @override

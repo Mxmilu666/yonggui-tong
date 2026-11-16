@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../data/favorite_widget.dart';
 import '../../data/providers.dart';
 
 class SettingsPage extends ConsumerStatefulWidget {
@@ -70,6 +71,19 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               subtitle: Text('$routeCount 条 · 显示在首页'),
               trailing: const Icon(Icons.chevron_right),
               onTap: () => context.go('/'),
+            ),
+            if (ref.watch(widgetPinSupportedProvider).valueOrNull ?? false) ListTile(
+              leading: const Icon(Icons.widgets_outlined),
+              title: const Text('添加桌面小组件'),
+              subtitle: const Text('在桌面显示收藏车站的下一班'),
+              trailing: const Icon(Icons.add),
+              onTap: () async {
+                final requested = await FavoriteWidget.pin();
+                if (!requested && context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('当前桌面不支持直接添加，请在桌面长按空白处，从小组件列表添加「甬轨通」')));
+                }
+              },
             ),
             const _SectionTitle('外观'),
             const ListTile(leading: Icon(Icons.palette_outlined), title: Text('主题模式')),
