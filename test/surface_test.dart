@@ -16,6 +16,7 @@ import 'package:yonggui_tong/features/home/home_page.dart';
 import 'package:yonggui_tong/features/settings/settings_page.dart';
 import 'package:yonggui_tong/features/planner/planner_page.dart';
 import 'package:yonggui_tong/app/router.dart';
+import 'package:yonggui_tong/app/version.dart';
 import 'package:yonggui_tong/core/models/favorite_route.dart';
 import 'package:yonggui_tong/data/repositories/favorites_repository.dart';
 import 'package:yonggui_tong/features/home/favorite_route_card.dart';
@@ -213,7 +214,7 @@ void main() {
     await tester.pumpWidget(MaterialApp(builder: (context, child) => MediaQuery(
       data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(1.4)), child: child!), home: const AboutPage()));
     await tester.pumpAndSettle();
-    expect(find.text('宁波地铁出行助手 · 1.0.0'), findsOneWidget);
+    expect(find.text('宁波地铁出行助手 · $appVersion'), findsOneWidget);
     expect(find.text('数据来自宁波地铁官方'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });

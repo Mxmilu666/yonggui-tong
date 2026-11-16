@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../app/version.dart';
 import '../../data/favorite_widget.dart';
 import '../../data/providers.dart';
 
@@ -142,7 +143,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             ListTile(
               leading: const Icon(Icons.info_outline_rounded),
               title: const Text('关于甬轨通'),
-              subtitle: const Text('版本 1.0.0'),
+              subtitle: const Text('版本 $appVersion'),
               trailing: const Icon(Icons.chevron_right),
               onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const AboutPage())),
             ),
@@ -178,7 +179,7 @@ class AboutPage extends StatelessWidget {
         const SizedBox(height: 16),
         Text('甬轨通', textAlign: TextAlign.center, style: Theme.of(context).textTheme.headlineMedium),
         const SizedBox(height: 8),
-        const Text('宁波地铁出行助手 · 1.0.0', textAlign: TextAlign.center),
+        const Text('宁波地铁出行助手 · $appVersion', textAlign: TextAlign.center),
         const SizedBox(height: 32),
         Card.outlined(child: Column(children: [
           const ListTile(
@@ -192,7 +193,7 @@ class AboutPage extends StatelessWidget {
             title: const Text('开源许可'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => showLicensePage(context: context,
-              applicationName: '甬轨通', applicationVersion: '1.0.0'),
+              applicationName: '甬轨通', applicationVersion: appVersion),
           ),
         ])),
       ]),
